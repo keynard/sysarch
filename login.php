@@ -13,23 +13,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id_number, $hashed_password);
+        $stmt->bind_result($student_number, $hashed_password);
         $stmt->fetch();
 
         // Verify entered password against the hashed password
         if (password_verify($password, $hashed_password)) {
-            // Start session and store user info
-            $_SESSION['id_number'] = $id_number;
+            // Store student number in session
+            $_SESSION['student_number'] = $student_number;
             $_SESSION['username'] = $username;
             
             // Redirect to dashboard
             header("Location: dashboard.php");
             exit();
         } else {
-            echo "Invalid username or password.";
+            echo "<script>alert('Invalid username or password.');</script>";
         }
     } else {
-        echo "Invalid username or password.";
+        echo "<script>alert('Invalid username or password.');</script>";
     }
 
     $stmt->close();
@@ -43,7 +43,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CCS Sit in Maintaining System</title>
+    <title>CCS Sit in Monitoring System</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <style>
         body {
@@ -79,7 +79,7 @@ $conn->close();
 </head>
 <body>
     <div class="w3-container w3-card-4 w3-light-grey container">
-        <h2>CCS SIT IN MAINTAINING SYSTEM</h2>
+        <h2>CCS SIT IN MONITORING SYSTEM</h2>
         <img src="ccslogo-removebg-preview.png" alt="Logo" class="w3-image" style="width: 50px; height: 50px;">
         <img src="uclogo-removebg-preview.png" alt="Logo" class="w3-image" style="width: 50px; height: 50px;">
         
