@@ -83,13 +83,17 @@ $conn->close();
         }
         .profile-info {
             color: white;
-            text-align: center;
             padding: 20px;
         }
         .profile-info img {
-            width: 90px;
-            height: 90px;
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
+            display: block;
+            margin: 0 auto 10px auto;
+        }
+        .profile-info p {
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -107,9 +111,10 @@ $conn->close();
 
     <div class="profile-info">
         <img src="images.jfif" alt="Profile Picture">
-        <h3><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?></h3>
-        <p><?= htmlspecialchars($student['course']); ?> - Year <?= htmlspecialchars($student['year_level']); ?></p>
-        <p><?= htmlspecialchars($student['email']); ?></p>
+        <p><strong>Name:</strong> <?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?></p>
+        <p><strong>Email:</strong> <?= htmlspecialchars($student['email']); ?></p>
+        <p><strong>Year:</strong> <?= htmlspecialchars($student['year_level']); ?></p>
+     
     </div>
 
     <a href="javascript:void(0)" onclick="document.getElementById('editModal').style.display='block'">Edit Profile</a>
@@ -137,6 +142,12 @@ $conn->close();
                 <label>Email</label>
                 <input type="email" name="email" value="<?= htmlspecialchars($student['email']); ?>" class="w3-input" required>
 
+                <label>Duration</label>
+                <select name="duration" class="w3-select" required>
+                    <option value="Partial Time" <?= $student['duration'] == 'Partial Time' ? 'selected' : ''; ?>>Partial Time</option>
+                    <option value="Temporary Time" <?= $student['duration'] == 'Temporary Time' ? 'selected' : ''; ?>>Temporary Time</option>
+                </select>
+
                 <button type="submit" class="w3-button w3-green w3-margin-top">Save Changes</button>
             </form>
         </div>
@@ -145,7 +156,7 @@ $conn->close();
 
 <script>
 function openNav() {
-    document.getElementById("sidebar").style.width = "250px";
+    document.getElementById("sidebar").style.width = "300px"; // Adjusted width
 }
 
 function closeNav() {
