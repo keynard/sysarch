@@ -70,7 +70,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $conn->close();
 ?>
 
-
+<script>
+    function redirectToLogin() {
+        window.location.href = 'login.php';
+    }
+</script>
 
 
 <!DOCTYPE html>
@@ -80,25 +84,32 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCS SIT IN MAINTAINING SYSTEM - Register</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: url('campus.jfif') no-repeat center center fixed;
-            background-size: cover;
-            margin: 0;
-        }
-        .w3-input, .w3-select {
-            width: 80%;
-            margin: 10px auto;
-        }
-        .w3-button {
-            width: 40%;
-            margin: 10px auto;
-        }
-    </style>
+   
+<style>
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: url('campus.jfif') no-repeat center center fixed;
+        background-size: cover;
+        margin: 0;
+    }
+    .w3-input, .w3-select {
+        width: 80%;
+        margin: 10px auto;
+    }
+    .button-container {
+        display: flex;
+        justify-content: space-between;
+        width: 80%;
+        margin: 10px auto;
+    }
+    .w3-button {
+        width: 48%;
+    }
+</style>
+
     <script>
         function redirectToLogin() {
             window.location.href = 'login.php';
@@ -136,7 +147,10 @@ $conn->close();
     <input type="text" name="username" placeholder="USERNAME" required class="w3-input">
     <input type="password" name="password" placeholder="PASSWORD" required class="w3-input">
     
-    <button type="submit" class="w3-button w3-blue">SAVE</button>
+    <div class="button-container">
+        <button type="submit" class="w3-button w3-blue">SAVE</button>
+        <button type="button" onclick="redirectToLogin()" class="w3-button w3-green">LOGIN</button>
+    </div>
 </form>
 
 

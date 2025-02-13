@@ -10,7 +10,7 @@ if (!isset($_SESSION['student_number'])) {
 
 // Fetch student details
 $student_number = $_SESSION['student_number'];
-$query = "SELECT student_number, lastname, firstname, middlename, course, year_level, email FROM students WHERE student_number = ?";
+$query = "SELECT student_number, lastname, firstname, middlename, course,address, year_level, email FROM students WHERE student_number = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $student_number);
 $stmt->execute();
@@ -51,6 +51,8 @@ $conn->close();
             position: absolute;
             right: 20px;
             top: 10px;
+            padding: 3px 0px;
+            font-size: 20px;
         }
         .sidebar {
             height: 100%;
@@ -102,7 +104,7 @@ $conn->close();
 <div class="header">
     <span class="menu-icon" onclick="openNav()">&#9776;</span>
     DASHBOARD
-    <a href="login.php" class="w3-button w3-red logout">Logout</a>
+    <a href="login.php" class="w3-button w3-round-large w3-white logout">Logout</a>
 </div>
 
 <!-- Sidebar (Hamburger Menu) -->
@@ -114,7 +116,9 @@ $conn->close();
         <p><strong>Name:</strong> <?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?></p>
         <p><strong>Email:</strong> <?= htmlspecialchars($student['email']); ?></p>
         <p><strong>Year:</strong> <?= htmlspecialchars($student['year_level']); ?></p>
-     
+        <p><strong>Course:</strong> <?= htmlspecialchars($student['course']); ?></p>
+        <p><strong>Address:</strong> <?= htmlspecialchars($student['address']); ?></p>
+        <p>Duration:30 min</p>
     </div>
 
     <a href="javascript:void(0)" onclick="document.getElementById('editModal').style.display='block'">Edit Profile</a>
