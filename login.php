@@ -51,7 +51,7 @@ $conn->close();
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: url('campus.jfif') no-repeat center center fixed;
+            background: url('uc-campus.png') no-repeat center center fixed;
             background-size: cover;
             margin: 0;
         }

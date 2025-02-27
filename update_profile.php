@@ -16,6 +16,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $course = trim($_POST['course']);
     $year_level = (int)$_POST['year_level'];
     $email = trim($_POST['email']);
+    $duration_value = (int)$_POST['duration_value'];
+    $duration_unit = trim($_POST['duration_unit']);
 
     // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -23,14 +25,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Ensure all fields are filled
-    if (!$firstname || !$lastname || !$course || !$year_level || !$email) {
+    if (!$firstname || !$lastname || !$course || !$year_level || !$email || !$duration_value || !$duration_unit) {
         die("Error: All fields are required!");
     }
 
+    // Handle file upload
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == 0) {
+        $target_dir = "uploads/";
+        $target_file = $target_dir . basename($_FILES["profile_picture"]["name"]);
+        move_uploaded_file($_FILES["profile_picture"]["tmp_name"], $target_file);
+        $profile_picture = $target_file;
+    } else {
+        $profile_picture = isset($_POST['existing_profile_picture']) ? $_POST['existing_profile_picture'] : '';
+    }
+
     // Update student profile in the database
-    $query = "UPDATE students SET firstname=?, lastname=?, course=?, year_level=?, email=? WHERE student_number=?";
+    $query = "UPDATE students SET firstname=?, lastname=?, course=?, year_level=?, email=?, duration_value=?, duration_unit=?, profile_picture=? WHERE student_number=?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("sssiss", $firstname, $lastname, $course, $year_level, $email, $student_number);
+    $stmt->bind_param("sssisssss", $firstname, $lastname, $course, $year_level, $email, $duration_value, $duration_unit, $profile_picture, $student_number);
 
     if ($stmt->execute()) {
         // Fetch the updated email from the database

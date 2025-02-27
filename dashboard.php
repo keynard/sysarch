@@ -10,7 +10,7 @@ if (!isset($_SESSION['student_number'])) {
 
 // Fetch student details
 $student_number = $_SESSION['student_number'];
-$query = "SELECT student_number, lastname, firstname, middlename, course,address, year_level, email FROM students WHERE student_number = ?";
+$query = "SELECT student_number, lastname, firstname, middlename, course, address, year_level, duration_value, duration_unit, email FROM students WHERE student_number = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $student_number);
 $stmt->execute();
@@ -31,6 +31,8 @@ $conn->close();
     body {
         font-family: Arial, sans-serif;
         margin: 0;
+        background: url('uc-campus.png') no-repeat center center fixed;
+        background-size: cover;
     }
     .header {
         background:rgb(9, 32, 160);
@@ -73,6 +75,7 @@ $conn->close();
         overflow-x: hidden;
         transition: 0.3s;
         padding-top: 60px;
+       
     }
     .sidebar a {
         padding: 10px 20px;
@@ -84,6 +87,7 @@ $conn->close();
     }
     .sidebar a:hover {
         background-color: #575757;
+      
     }
     .sidebar .close-btn {
         position: absolute;
@@ -113,6 +117,12 @@ $conn->close();
         background-color: #3f51b5;
         color: white;
         padding: 10px;
+        border-radius: 20px;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .w3-card-4 {
+        border-radius: 20px;
     }
     
 </style>
@@ -126,7 +136,7 @@ $conn->close();
 </div>
 <!-- Announcements Section -->
 <div class="w3-container w3-padding-16">
-   
+
     <div class="w3-card-4 w3-margin w3-white">
     <div class="section-header ">
         <h2 class="hhh">Announcements</h2>
@@ -142,7 +152,7 @@ $conn->close();
 </div>
 
 <!-- Rules and Regulations Section -->
-<div class="w3-container w3-padding-16">
+<div class="w3-container w3-padding-16" >
     
     <div class="w3-card-4 w3-margin w3-white">
     <div class="section-header ">
@@ -161,18 +171,22 @@ $conn->close();
 <div id="sidebar" class="sidebar">
     <span class="close-btn" onclick="closeNav()">&times;</span>
 
+    
     <div class="profile-info">
-        <img src="images.jfif" alt="Profile Picture">
+        <img src="images-png.png" alt="Profile Picture">
         <p><strong>Name:</strong> <?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?></p>
         <p><strong>Email:</strong> <?= htmlspecialchars($student['email']); ?></p>
         <p><strong>Year:</strong> <?= htmlspecialchars($student['year_level']); ?></p>
         <p><strong>Course:</strong> <?= htmlspecialchars($student['course']); ?></p>
         <p><strong>Address:</strong> <?= htmlspecialchars($student['address']); ?></p>
-        <p>Duration:30 min</p>
+        <p><strong>Duration:</strong> <?= htmlspecialchars($student['duration_value'] . ' ' . $student['duration_unit']); ?></p>
     </div>
+
 
     <a href="javascript:void(0)" onclick="document.getElementById('editModal').style.display='block'" >Edit Profile</a>
 </div>
+
+
 
 <!-- Edit Modal -->
 <div id="editModal" class="w3-modal">
@@ -180,7 +194,7 @@ $conn->close();
         <div class="w3-container">
             <span onclick="document.getElementById('editModal').style.display='none'" class="w3-button w3-display-topright">&times;</span>
             <h3>Edit Information</h3>
-            <form action="update_profile.php" method="post">
+            <form action="update_profile.php" method="post" enctype="multipart/form-data">
                 <label>First Name</label>
                 <input type="text" name="firstname" value="<?= htmlspecialchars($student['firstname']); ?>" class="w3-input" required>
                 
@@ -197,10 +211,15 @@ $conn->close();
                 <input type="email" name="email" value="<?= htmlspecialchars($student['email']); ?>" class="w3-input" required>
 
                 <label>Duration</label>
-                <select name="duration" class="w3-select" required>
-                    <option value="Partial Time" <?= $student['duration'] == 'Partial Time' ? 'selected' : ''; ?>>Partial Time</option>
-                    <option value="Temporary Time" <?= $student['duration'] == 'Temporary Time' ? 'selected' : ''; ?>>Temporary Time</option>
+                <input type="number" name="duration_value" value="<?= htmlspecialchars($student['duration_value']); ?>" class="w3-input" required>
+                <select name="duration_unit" class="w3-select" required>
+                    <option value="minutes" <?= $student['duration_unit'] == 'minutes' ? 'selected' : ''; ?>>Minutes</option>
+                    <option value="hours" <?= $student['duration_unit'] == 'hours' ? 'selected' : ''; ?>>Hours</option>
                 </select>
+
+                <label>Profile Picture</label>
+                <input type="file" name="profile_picture" class="w3-input">
+                
 
                 <button type="submit" class="w3-button w3-green w3-margin-top">Save Changes</button>
             </form>
@@ -209,13 +228,13 @@ $conn->close();
 </div>
 
 <script>
-function openNav() {
-    document.getElementById("sidebar").style.width = "300px"; // Adjusted width
-}
+    function openNav() {
+        document.getElementById("sidebar").style.width = "300px"; // Adjusted width
+    }
 
-function closeNav() {
-    document.getElementById("sidebar").style.width = "0";
-}
+    function closeNav() {
+        document.getElementById("sidebar").style.width = "0";
+    }
 </script>
 
 </body>
