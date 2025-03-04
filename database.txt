@@ -12,6 +12,13 @@ CREATE TABLE students (
     year_level INT NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    duration INT NOT NULL,
-    profile_picture VARCHAR(255)NOT NULL
+    session INT NOT NULL,
+    profile_picture VARCHAR(255)NOT NULL,
+    purpose_of_sitin VARCHAR(255)NOT NULL,
+    laboratory_number VARCHAR(50)NOT NULL,
+    time_in TIME NOT NULL,
+
 );
+
+
+
