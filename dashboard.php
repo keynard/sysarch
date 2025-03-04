@@ -10,7 +10,7 @@ if (!isset($_SESSION['student_number'])) {
 
 // Fetch student details
 $student_number = $_SESSION['student_number'];
-$query = "SELECT student_number, lastname, firstname, middlename, course, address, year_level, duration_value, duration_unit, email FROM students WHERE student_number = ?";
+$query = "SELECT student_number, lastname, firstname, middlename, course, address, year_level, duration_value, duration_unit, email, profile_picture, purpose_of_sitin, laboratory_number, time_in FROM students WHERE student_number = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $student_number);
 $stmt->execute();
@@ -75,7 +75,6 @@ $conn->close();
         overflow-x: hidden;
         transition: 0.3s;
         padding-top: 60px;
-       
     }
     .sidebar a {
         padding: 10px 20px;
@@ -87,7 +86,6 @@ $conn->close();
     }
     .sidebar a:hover {
         background-color: #575757;
-      
     }
     .sidebar .close-btn {
         position: absolute;
@@ -124,8 +122,7 @@ $conn->close();
     .w3-card-4 {
         border-radius: 20px;
     }
-    
-</style>
+    </style>
 </head>
 <body>
 
@@ -136,57 +133,94 @@ $conn->close();
 </div>
 <!-- Announcements Section -->
 <div class="w3-container w3-padding-16">
-
     <div class="w3-card-4 w3-margin w3-white">
-    <div class="section-header ">
-        <h2 class="hhh">Announcements</h2>
-    </div>
-        <div class="w3-container">
-            <h3 class="hhh">WAY KLASE <br> BIRTHDAY NAKO</h3>
-            <h5>Subtitle, <span class="w3-opacity">Date</span></h5>
+        <div class="section-header">
+            <h2 class="hhh">Announcements</h2>
         </div>
         <div class="w3-container">
-            <p>Details about the announcement...</p>
+            <h3 class="hhh">CCS Admin</h3>
+            <h5>CCS Admin <span class="w3-opacity">2025-Feb-25</span></h5>
+        </div>
+        <div class="w3-container">
+            <p>UC did it again.</p>
         </div>
     </div>
 </div>
 
 <!-- Rules and Regulations Section -->
-<div class="w3-container w3-padding-16" >
-    
+<div class="w3-container w3-padding-16">
     <div class="w3-card-4 w3-margin w3-white">
-    <div class="section-header ">
-        <h2 class="hhh">Rules and Regulation</h2>
-    </div>
-        <div class="w3-container">
-            <h3 class="hhh">University of Cebu <br>
-            COLLEGE OF INFORMATION & COMPUTER STUDIES</h3>
+        <div class="section-header">
+            <h2 class="hhh">Rules and Regulation</h2>
         </div>
         <div class="w3-container">
-            <p>Details about the rule...</p>
+            <h3 class="hhh">University of Cebu <br> COLLEGE OF INFORMATION & COMPUTER STUDIES</h3>
+        </div>
+        <div class="w3-container">
+            <b>LABORATORY RULES AND REGULATIONS</b>
+
+             <p>   To avoid embarrassment and maintain camaraderie with your friends and superiors at our laboratories, please observe the following:<br>
+
+                1. Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans and other personal pieces of equipment must be switched off.<br>
+
+                2. Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.<br>
+
+                3. Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of software are strictly prohibited.<br>
+
+                4. Getting access to other websites not related to the course (especially pornographic and illicit sites) is strictly prohibited.<br>
+
+                5. Deleting computer files and changing the set-up of the computer is a major offense.<br>
+
+                6. Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".<br>
+
+                7. Observe proper decorum while inside the laboratory.<br>
+
+                <ul> Do not get inside the lab unless the instructor is present.<br>
+                All bags, knapsacks, and the likes must be deposited at the counter.<br>
+                Follow the seating arrangement of your instructor.<br>
+                At the end of class, all software programs must be closed.<br>
+                Return all chairs to their proper places after using.</ul><br>
+                8. Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.<br>
+
+                9. Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the members of the community, including public display of physical intimacy, are not tolerated.<br>
+
+                10. Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.<br>
+
+                11. For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.<br>
+
+                12. Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.<br><br>
+                <hr>
+
+
+                <b>DISCIPLINARY ACTION</b> <br><br>
+
+                First Offense - The Head or the Dean or OIC recommends to the Guidance Center for a suspension from classes for each offender.<br>
+                Second and Subsequent Offenses - A recommendation for a heavier sanction will be endorsed to the Guidance Center.</p>
         </div>
     </div>
 </div>
+
 <!-- Sidebar (Hamburger Menu) -->
 <div id="sidebar" class="sidebar">
     <span class="close-btn" onclick="closeNav()">&times;</span>
-
-    
     <div class="profile-info">
-        <img src="images-png.png" alt="Profile Picture">
+        <?php
+        $profile_picture_url = htmlspecialchars($student['profile_picture']) . '?' . time();
+        echo "<img src='$profile_picture_url' alt='Profile Picture'>";
+        ?>
         <p><strong>Name:</strong> <?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?></p>
         <p><strong>Email:</strong> <?= htmlspecialchars($student['email']); ?></p>
         <p><strong>Year:</strong> <?= htmlspecialchars($student['year_level']); ?></p>
         <p><strong>Course:</strong> <?= htmlspecialchars($student['course']); ?></p>
         <p><strong>Address:</strong> <?= htmlspecialchars($student['address']); ?></p>
         <p><strong>Duration:</strong> <?= htmlspecialchars($student['duration_value'] . ' ' . $student['duration_unit']); ?></p>
+        <p><strong>Purpose of Sit-in:</strong> <?= htmlspecialchars($student['purpose_of_sitin']); ?></p>
+        <p><strong>Laboratory Number:</strong> <?= htmlspecialchars($student['laboratory_number']); ?></p>
+        <p><strong>Time In:</strong> <?= htmlspecialchars($student['time_in']); ?></p>
+        <p><strong>Remaining Time:</strong> <span id="remaining-time"></span></p>
     </div>
-
-
-    <a href="javascript:void(0)" onclick="document.getElementById('editModal').style.display='block'" >Edit Profile</a>
+    <a href="javascript:void(0)" onclick="document.getElementById('editModal').style.display='block'">Edit Profile</a>
 </div>
-
-
 
 <!-- Edit Modal -->
 <div id="editModal" class="w3-modal">
@@ -217,9 +251,18 @@ $conn->close();
                     <option value="hours" <?= $student['duration_unit'] == 'hours' ? 'selected' : ''; ?>>Hours</option>
                 </select>
 
+                <label>Purpose of Sit-in</label>
+                <input type="text" name="purpose_of_sitin" value="<?= htmlspecialchars($student['purpose_of_sitin']); ?>" class="w3-input" required>
+
+                <label>Laboratory Number</label>
+                <input type="text" name="laboratory_number" value="<?= htmlspecialchars($student['laboratory_number']); ?>" class="w3-input" required>
+
+                <label>Time In</label>
+                <input type="time" name="time_in" value="<?= htmlspecialchars($student['time_in']); ?>" class="w3-input" required>
+
                 <label>Profile Picture</label>
                 <input type="file" name="profile_picture" class="w3-input">
-                
+                <input type="hidden" name="existing_profile_picture" value="<?= htmlspecialchars($student['profile_picture']); ?>">
 
                 <button type="submit" class="w3-button w3-green w3-margin-top">Save Changes</button>
             </form>
@@ -228,13 +271,13 @@ $conn->close();
 </div>
 
 <script>
-    function openNav() {
-        document.getElementById("sidebar").style.width = "300px"; // Adjusted width
-    }
+function openNav() {
+    document.getElementById("sidebar").style.width = "300px"; // Adjusted width
+}
 
-    function closeNav() {
-        document.getElementById("sidebar").style.width = "0";
-    }
+function closeNav() {
+    document.getElementById("sidebar").style.width = "0";
+}
 </script>
 
 </body>
