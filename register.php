@@ -12,69 +12,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
     $password = $_POST['password']; // Will be hashed later
-    $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING); // New address field
+    $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_STRING);
 
     // Check required fields
     if (!$student_number || !$lastname || !$firstname || !$course || !$year_level || !$email || !$username || !$password || !$address) {
         die("Error: All fields are required!");
     }
 
-    // Check if student number already exists
-    $check_stmt = $conn->prepare("SELECT 1 FROM students WHERE student_number = ?");
-    $check_stmt->bind_param("s", $student_number);
-    $check_stmt->execute();
-    $check_stmt->store_result();
-    if ($check_stmt->num_rows > 0) {
-        die("Error: Student number already exists!");
+    // Check password strength
+    if (strlen($password) < 6) {
+        die("Error: Password must be at least 6 characters long!");
     }
-    $check_stmt->close();
 
-    // Check if email already exists
-    $check_stmt = $conn->prepare("SELECT 1 FROM students WHERE email = ?");
-    $check_stmt->bind_param("s", $email);
-    $check_stmt->execute();
-    $check_stmt->store_result();
-    if ($check_stmt->num_rows > 0) {
-        die("Error: Email already exists!");
-    }
-    $check_stmt->close();
+    // Check for duplicate student number, email, or username in a single query
+    $check_stmt = $conn->prepare("SELECT student_number, email, username FROM students WHERE student_number = ? OR email = ? OR username = ?");
+    $check_stmt->execute([$student_number, $email, $username]);
 
-    // Check if username already exists
-    $check_stmt = $conn->prepare("SELECT 1 FROM students WHERE username = ?");
-    $check_stmt->bind_param("s", $username);
-    $check_stmt->execute();
-    $check_stmt->store_result();
-    if ($check_stmt->num_rows > 0) {
-        die("Error: Username already exists!");
+    if ($check_stmt->fetch()) {
+        die("Error: Student Number, Email, or Username already exists!");
     }
-    $check_stmt->close();
+    $check_stmt->closeCursor(); // Proper way to free the statement in PDO
 
     // Hash the password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert user data into the database (Added address column)
-    $stmt = $conn->prepare("INSERT INTO students (student_number, lastname, firstname, middlename, course, year_level, email, address, username, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssissss", $student_number, $lastname, $firstname, $midname, $course, $year_level, $email, $address, $username, $hashed_password);
-
-    if ($stmt->execute()) {
+    // Insert user data into the database (Added address column & default sessions)
+    $stmt = $conn->prepare("INSERT INTO students (student_number, lastname, firstname, middlename, course, year_level, email, address, username, password, sessions) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 30)");
+    if ($stmt->execute([$student_number, $lastname, $firstname, $midname, $course, $year_level, $email, $address, $username, $hashed_password])) {
         echo "Registration successful! Redirecting to login...";
         header("refresh:2;url=login.php");
         exit();
     } else {
-        die("Error: " . $stmt->error);
+        die("Error: " . $stmt->errorInfo()[2]);
     }
-
-    $stmt->close();
 }
-
-$conn->close();
 ?>
 
-<script>
-    function redirectToLogin() {
-        window.location.href = 'login.php';
-    }
-</script>
+
 
 
 <!DOCTYPE html>

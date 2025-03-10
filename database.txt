@@ -1,24 +1,64 @@
-CREATE DATABASE registration_system;
+CREATE DATABASE IF NOT EXISTS registration_system;
 USE registration_system;
+
+-- Admin Table
+CREATE TABLE Admin (
+    admin_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL -- Should be hashed before storing
+);
+
+-- Students Table
 CREATE TABLE students (
-    id_number INT PRIMARY KEY,
-    student_number varchar(50)not null,
+    student_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_number VARCHAR(50) NOT NULL UNIQUE,
     lastname VARCHAR(50) NOT NULL,
     firstname VARCHAR(50) NOT NULL,
     middlename VARCHAR(50),
-    address VARCHAR(50) NOT NULL,
+    address VARCHAR(100) NOT NULL,
     course VARCHAR(50) NOT NULL,
-    email VARCHAR(50)NOT NULL,
-    year_level INT NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    year_level INT NOT NULL CHECK (year_level BETWEEN 1 AND 6),
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    session INT NOT NULL,
-    profile_picture VARCHAR(255)NOT NULL,
-    purpose_of_sitin VARCHAR(255)NOT NULL,
-    laboratory_number VARCHAR(50)NOT NULL,
-    time_in TIME NOT NULL,
-
+    profile_picture VARCHAR(255) DEFAULT NULL,
+    sessions INT DEFAULT 30, -- Students start with 30 sessions
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Sit-In Log Table (Tracks students who sit in)
+CREATE TABLE SitIn_Log (
+    sitin_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    time_in DATETIME DEFAULT CURRENT_TIMESTAMP,
+    laboratory_number VARCHAR(50) NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
+-- Announcements Table (Admin can edit announcements)
+CREATE TABLE announcement (
+    announcement_id INT PRIMARY KEY AUTO_INCREMENT,
+    admin_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES Admin(admin_id) ON DELETE CASCADE
+);
+
+-- Triggers (Auto-decrease session count when student sits in)
+DELIMITER //
+CREATE TRIGGER reduce_student_session
+BEFORE INSERT ON SitIn_Log
+FOR EACH ROW
+BEGIN
+    UPDATE students 
+    SET sessions = sessions - 1
+    WHERE student_id = NEW.student_id AND sessions > 0;
+END;
+//
+DELIMITER ;
 
 
 
