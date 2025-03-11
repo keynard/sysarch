@@ -202,7 +202,7 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     <span class="menu-icon" onclick="openNav()">&#9776;</span>
     DASHBOARD
     <a href="login.php" class="logout">Logout</a>
-    <a href="#" class="sit-in" onclick="document.getElementById('sitInModal').style.display='block'">Sit-in</a>
+    <a href="update_profile.php" class="sit-in">Sit-in</a>
 </div>
 
 <!-- Sidebar (Hamburger Menu) -->

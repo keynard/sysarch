@@ -47,6 +47,8 @@ CREATE TABLE announcement (
     FOREIGN KEY (admin_id) REFERENCES Admin(admin_id) ON DELETE CASCADE
 );
 
+-------------------------------------------------------------------------------
+
 -- Triggers (Auto-decrease session count when student sits in)
 DELIMITER //
 CREATE TRIGGER reduce_student_session
@@ -61,4 +63,10 @@ END;
 DELIMITER ;
 
 
+---------------------------------------------------------------------------
+
+CREATE EVENT delete_old_announcements
+ON SCHEDULE EVERY 1 DAY
+DO
+DELETE FROM announcement WHERE created_at < NOW() - INTERVAL 30 DAY;
 
