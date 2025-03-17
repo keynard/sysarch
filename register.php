@@ -124,7 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     <div class="button-container">
         <button type="submit" class="w3-button w3-blue">SAVE</button>
-        <button type="button" onclick="redirectToLogin()" class="w3-button w3-green">LOGIN</button>
+        <button type="button" onclick="redirectToLogin()" class="w3-button w3-green">Go to Login</button>
     </div>
 </form>
 
