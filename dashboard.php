@@ -8,6 +8,7 @@ if (!isset($_SESSION['student_number'])) {
     exit();
 }
 
+
 // Fetch student details based on student_number
 $student_number = $_SESSION['student_number'];
 
@@ -68,38 +69,36 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
         background: url('uc-campus.png') no-repeat center center fixed;
         background-size: cover;
     }
-    .header {
+    .navbar {
         background: rgb(9, 32, 160);
         color: white;
         padding: 15px;
         text-align: center;
         font-size: 24px;
         position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .menu-icon {
         font-size: 30px;
         cursor: pointer;
-        position: absolute;
-        left: 20px;
-        top: 10px;
+        margin-left: 20px;
     }
-    .logout, .sit-in {
-        position: absolute;
-        top: 17px;
+    .nav-links {
+        display: flex;
+        gap: 20px;
+        margin-right: 20px;
+    }
+    .nav-links a {
         font-size: 16px;
         color: white;
         cursor: pointer;
         transition: color 0.3s;
         text-decoration: none;
     }
-    .logout {
-        right: 20px;
-    }
-    .sit-in {
-        right: 100px;
-    }
-    .logout:hover, .sit-in:hover {
-        color:rgb(5, 2, 2);
+    .nav-links a:hover {
+        color: rgb(5, 2, 2);
     }
     .sidebar {
         height: 100%;
@@ -162,26 +161,7 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
         font-size: 12px;
         color: gray;
     }
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgb(0,0,0);
-        background-color: rgba(0,0,0,0.4);
-        padding-top: 60px;
-    }
-    .modal-content {
-        background-color: #fefefe;
-        margin: 5% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-    }
+    
     .close {
         color: #aaa;
         float: right;
@@ -198,11 +178,15 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
 </head>
 <body>
 
-<div class="header">
+<div class="navbar">
     <span class="menu-icon" onclick="openNav()">&#9776;</span>
-    DASHBOARD
-    <a href="login.php" class="logout">Logout</a>
-    <a href="update_profile.php" class="sit-in">Sit-in</a>
+    <span>DASHBOARD</span>
+    <div class="nav-links">
+        <a>Notification</a>
+        <a href="update_profile.php" class="edit-prof">Edit Profile</a>
+        <a  onclick="document.getElementById('reservationModal').style.display='block'">Reservation</a>
+        <a href="login.php" class="logout">Logout</a>
+    </div>
 </div>
 
 <!-- Sidebar (Hamburger Menu) -->
@@ -225,6 +209,29 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
             <p><strong>Laboratory Number:</strong> Not available</p>
             <p><strong>Time In:</strong> Not available</p>
         <?php endif; ?>
+    </div>
+</div>
+<!-- Reservation Modal -->
+<div class="w3-modal" id="reservationModal" style="display:none;">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+        <header class="w3-container w3-blue">
+            <span onclick="document.getElementById('reservationModal').style.display='none'" 
+                  class="w3-button w3-display-topright">&times;</span>
+            <h2>Make a Reservation</h2>
+        </header>
+        <form action="reservation.php" method="POST" class="w3-container">
+            <div class="w3-section">
+                <label for="laboratory_number"><b>Laboratory Number</b></label>
+                <input type="text" id="laboratory_number" name="laboratory_number" class="w3-input w3-border" required>
+
+                <label for="purpose"><b>Purpose</b></label>
+                <textarea id="purpose" name="purpose" class="w3-input w3-border" rows="4" required></textarea>
+            </div>
+            <footer class="w3-container w3-light-grey">
+                <button type="button" class="w3-button w3-red" onclick="document.getElementById('reservationModal').style.display='none'">Cancel</button>
+                <button type="submit" class="w3-button w3-blue">Submit</button>
+            </footer>
+        </form>
     </div>
 </div>
 

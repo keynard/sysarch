@@ -2,28 +2,43 @@
 session_start();
 include 'db.php'; // Include PDO connection
 
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
 
     try {
-        // Prepare query using PDO
-        $stmt = $conn->prepare("SELECT student_number, password FROM students WHERE username = ?");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Check if the user is an admin
+        $adminQuery = "SELECT admin_id, password FROM Admin WHERE username = :username";
+        $adminStmt = $conn->prepare($adminQuery);
+        $adminStmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $adminStmt->execute();
+        $admin = $adminStmt->fetch(PDO::FETCH_ASSOC);
 
-        // Verify the password
-        if ($user && password_verify($password, $user['password'])) {
-            // Store session variables
-            $_SESSION['student_number'] = $user['student_number'];
+        if ($admin && password_verify($password, $admin['password'])) {
+            // Admin login successful
+            $_SESSION['admin_id'] = $admin['admin_id'];
+            header("Location: admin.php");
+            exit();
+        }
+
+        // Check if the user is a student
+        $studentQuery = "SELECT student_number, password FROM students WHERE username = :username";
+        $studentStmt = $conn->prepare($studentQuery);
+        $studentStmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $studentStmt->execute();
+        $student = $studentStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($student && password_verify($password, $student['password'])) {
+            // Student login successful
+            $_SESSION['student_number'] = $student['student_number'];
             $_SESSION['username'] = $username;
-            
-            // Redirect to dashboard
             header("Location: dashboard.php");
             exit();
-        } else {
-            echo "<script>alert('Invalid username or password.');</script>";
         }
+
+        // If neither admin nor student credentials match
+        echo "<script>alert('Invalid username or password.');</script>";
     } catch (PDOException $e) {
         die("Error: " . $e->getMessage()); // Better error handling
     }
@@ -96,15 +111,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .navbar-links a:hover {
             background-color: #045f8c;
             border-radius: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .navbar-links {
-                flex-direction: column;
-                gap: 10px;
-                margin-right: 0;
-                align-items: center;
-            }
         }
     </style>
 </head>

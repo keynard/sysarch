@@ -26,7 +26,7 @@ CREATE TABLE students (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Sit-In Log Table (Tracks students who sit in)
+-- Sit-In Log Table
 CREATE TABLE SitIn_Log (
     sitin_id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE SitIn_Log (
     FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
 );
 
--- Announcements Table (Admin can edit announcements)
+-- Announcements Table
 CREATE TABLE announcement (
     announcement_id INT PRIMARY KEY AUTO_INCREMENT,
     admin_id INT NOT NULL,
@@ -47,7 +47,16 @@ CREATE TABLE announcement (
     FOREIGN KEY (admin_id) REFERENCES Admin(admin_id) ON DELETE CASCADE
 );
 
--------------------------------------------------------------------------------
+-- Reservations Table
+CREATE TABLE reservations (
+    reservation_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    laboratory_number VARCHAR(50) NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
 
 -- Triggers (Auto-decrease session count when student sits in)
 DELIMITER //
@@ -62,11 +71,8 @@ END;
 //
 DELIMITER ;
 
-
----------------------------------------------------------------------------
-
+-- Scheduled Event to Delete Old Announcements
 CREATE EVENT delete_old_announcements
 ON SCHEDULE EVERY 1 DAY
 DO
 DELETE FROM announcement WHERE created_at < NOW() - INTERVAL 30 DAY;
-
