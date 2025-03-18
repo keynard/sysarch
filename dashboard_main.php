@@ -19,7 +19,7 @@
         width: 100%;
         background-color: #0d4a8f;
         color: white;
-        padding: 1.5rem; /* Increased padding for a bigger navbar */
+        padding: 1.4rem; /* Increased padding for a bigger navbar */
         z-index: 1000; /* Ensures navbar is above other elements */
         display: flex;
         justify-content: space-between;
@@ -28,7 +28,7 @@
     .navbar-title {
         font-size: 1.3rem; /* Increased font size */
         font-weight: bold;
-        margin-left: 20px;
+        margin-left: 15px;
     }
     .navbar-links a {
         color: white;

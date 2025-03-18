@@ -38,16 +38,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>CCS Sit-in Monitoring System</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <style>
-          body {
-        margin: 0;
-        padding-top: 60px; /* Push content below navbar */
-        background: url('uc-campus.png') no-repeat center center fixed;
-        background-size: cover;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
+        body {
+            margin: 0;
+            padding-top: 60px; /* Push content below navbar */
+            background: url('uc-campus.png') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
         .container {
             background-color: #e0e0e0;
             padding: 20px;
@@ -63,46 +63,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             width: 40%;
             margin: 10px auto;
         }
-        .navbar-links {
-        display: flex;
-        gap: 20px; /* Space between links */
-        margin-right: 20px; /* Space from the right edge */
-    }
         .navbar {
-        position: fixed;  /* Fixes navbar at the top */
-        top: 0;
-        left: 0;
-        width: 100%;
-        background-color: #0d4a8f;
-        color: white;
-        padding: 1rem;
-        z-index: 1000; /* Keeps navbar above everything else */
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .navbar-title {
+            position: fixed;  /* Fixes navbar at the top */
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #0d4a8f;
+            color: white;
+            padding: 1rem;
+            z-index: 1000; /* Keeps navbar above everything else */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-title {
             font-size: 1.3rem;
             font-weight: bold;
-            margin-right: 550px;
+            margin-left: 20px;
         }
-      .navbar-links a {
+        .navbar-links {
+            display: flex;
+            gap: 20px; /* Space between links */
+            margin-right: 20px; /* Space from the right edge */
+        }
+        .navbar-links a {
             color: white;
             text-decoration: none;
             padding: 0.5rem;
+            font-size: 1rem;
+        }
+        .navbar-links a:hover {
+            background-color: #045f8c;
+            border-radius: 5px;
         }
 
+        @media (max-width: 768px) {
+            .navbar-links {
+                flex-direction: column;
+                gap: 10px;
+                margin-right: 0;
+                align-items: center;
+            }
+        }
     </style>
-    
 </head>
 <body>
-<nav class="w3-bar navbar">
+    <nav class="navbar">
         <div class="navbar-title">College of Computer Studies Sit-in Monitoring System</div>
         <div class="navbar-links">
             <a href="dashboard_main.php" class="w3-bar-item w3-button">Home</a>
             <a href="#" class="w3-bar-item w3-button">Community ▼</a>
             <a href="#" class="w3-bar-item w3-button">About</a>
-            <a href="#" class="w3-bar-item w3-button">Login</a>
+            <a href="login.php" class="w3-bar-item w3-button">Login</a>
             <a href="register.php" class="w3-bar-item w3-button">Register</a>
         </div>
     </nav>
@@ -116,7 +129,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="text" name="username" placeholder="USERNAME" required class="w3-input">
             <input type="password" name="password" placeholder="PASSWORD" required class="w3-input">
             <button type="submit" class="w3-button w3-blue">LOGIN</button>
-            
         </form>
     </div>
 </body>
