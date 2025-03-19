@@ -106,7 +106,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <option value="" disabled selected>Select your course</option>
         <option value="Computer Science">Computer Science</option>
         <option value="Information Technology">Information Technology</option>
-        <option value="Software Engineering">Software Engineering</option>
+        <option value="Computer Engineering">Computer Engineering</option>
+        <option value="Artificial Intelligence">Artificial Intelligence</option>
+        <option value="Hospitality Management">Hospitality Management</option>
+        <option value="Bachelor of Science in Criminology">Bachelor of Science in Criminology</option>
     </select>
     
     <select name="year_level" required class="w3-select">

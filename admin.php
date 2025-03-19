@@ -55,6 +55,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     echo "<script>alert('Reservation has been " . ($action === 'approve' ? 'approved' : 'rejected') . ".'); window.location.href='admin.php';</script>";
     exit();
 }
+// Fetch program distribution data
+$programQuery = "SELECT course, COUNT(*) as count FROM students GROUP BY course";
+$programStmt = $conn->prepare($programQuery);
+$programStmt->execute();
+$programData = $programStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch laboratory usage data
+$labQuery = "SELECT laboratory_number, COUNT(*) as count FROM SitIn_Log GROUP BY laboratory_number";
+$labStmt = $conn->prepare($labQuery);
+$labStmt->execute();
+$labData = $labStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -159,14 +170,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         <h1>College of Computer Studies Admin</h1>
         <div class="nav-links">
             <a href="#">Home</a>
-            <div>
-    <form method="GET" action="admin.php" style="display: flex; align-items: center;">
-        <input type="text" name="search" placeholder="Search by Student Number, Name, or Last Name..." class="search-box" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
-        <button type="submit" class="w3-button w3-blue" style="margin-left: 10px;">Search</button>
-    </form>
-</div>
+            
+           
+            
+            <a  style="cursor: pointer;" onclick="document.getElementById('searchModal').style.display='block'">Search</a>
             <a href="#">Navigate</a>
-            <a href="#">Sit-in Records</a>
+            <a href="reservation_handler.php">Sit-in</a>
+            <a href="">Sit-in Records</a>
             <a href="#">Sit-in Reports</a>
             <a href="#">Feedback Reports</a>
             <a href="#">Reservation</a>
@@ -215,86 +225,119 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         </tr>
     </thead>
     <tbody>
-        <?php if (count($pendingReservations) > 0): ?>
-            <?php foreach ($pendingReservations as $reservation): ?>
-                <tr>
-                    <td><?= htmlspecialchars($reservation['reservation_id']) ?></td>
-                    <td><?= htmlspecialchars($reservation['student_number']) ?></td>
-                    <td><?= htmlspecialchars($reservation['firstname'] . ' ' . $reservation['lastname']) ?></td>
-                    <td><?= htmlspecialchars($reservation['laboratory_number']) ?></td>
-                    <td><?= htmlspecialchars($reservation['purpose']) ?></td>
-                    <td><?= htmlspecialchars($reservation['status']) ?></td>
-                    <td><?= htmlspecialchars($reservation['created_at']) ?></td>
-                    <td>
-                        <form method="POST" style="display: inline;">
-                            <input type="hidden" name="reservation_id" value="<?= $reservation['reservation_id'] ?>">
-                            <button type="submit" name="action" value="approve" class="w3-button w3-green">Approve</button>
-                            <button type="submit" name="action" value="reject" class="w3-button w3-red">Reject</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
+    <?php if (count($pendingReservations) > 0): ?>
+        <?php foreach ($pendingReservations as $reservation): ?>
             <tr>
-                <td colspan="8" style="text-align: center;">No pending reservations found.</td>
+                <td><?= htmlspecialchars($reservation['reservation_id']) ?></td>
+                <td><?= htmlspecialchars($reservation['student_number']) ?></td>
+                <td><?= htmlspecialchars($reservation['firstname'] . ' ' . $reservation['lastname']) ?></td>
+                <td><?= htmlspecialchars($reservation['laboratory_number']) ?></td>
+                <td><?= htmlspecialchars($reservation['purpose']) ?></td>
+                <td><?= htmlspecialchars($reservation['status']) ?></td>
+                <td><?= htmlspecialchars($reservation['created_at']) ?></td>
+                <td>
+                    <form method="POST" action="reservation_handler.php" style="display: inline;">
+                        <input type="hidden" name="reservation_id" value="<?= $reservation['reservation_id'] ?>">
+                        <button type="submit" name="action" value="approve" class="w3-button w3-green">Approve</button>
+                        <button type="submit" name="action" value="reject" class="w3-button w3-red">Reject</button>
+                    </form>
+                </td>
             </tr>
-        <?php endif; ?>
-    </tbody>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="8" style="text-align: center;">No pending reservations found.</td>
+        </tr>
+    <?php endif; ?>
+</tbody>
 </table>
     </div>
 
-    <script>
-        // Program distribution chart
-        const programCtx = document.getElementById('programChart').getContext('2d');
-        const programChart = new Chart(programCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['CS', 'IT', 'ISTE', 'APP Dev'],
-                datasets: [{
-                    data: [70, 10, 15, 5],
-                    backgroundColor: ['#20c997', '#dc3545', '#fd7e14', '#6f42c1'],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        display: true
-                    }
-                },
-                cutout: '60%'
-            }
-        });
+    
+    <!-- Search Modal -->
+<div id="searchModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+        <header class="w3-container w3-blue">
+            <span onclick="document.getElementById('searchModal').style.display='none'" 
+                  class="w3-button w3-display-topright">&times;</span>
+            <h2>Search Reservations</h2>
+        </header>
+        <form method="GET" action="admin.php" class="w3-container">
+            <div class="w3-section">
+                <label for="search"><b>Search by Student Number, Name, or Last Name</b></label>
+                <input type="text" id="search" name="search" class="w3-input w3-border" 
+                       placeholder="Enter search term..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" required>
+            </div>
+            <footer class="w3-container w3-light-grey">
+                <button type="button" class="w3-button w3-red" onclick="document.getElementById('searchModal').style.display='none'">Cancel</button>
+                <button type="submit" class="w3-button w3-blue">Search</button>
+            </footer>
+        </form>
+    </div>
+</div>
 
-        // Laboratory usage chart
-        const labCtx = document.getElementById('labChart').getContext('2d');
-        const labChart = new Chart(labCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['G1', 'G2B', 'G3', 'G1D'],
-                datasets: [{
-                    data: [40, 30, 20, 10],
-                    backgroundColor: ['#ff9cbb', '#6cb2eb', '#6ee7b7', '#ffd54f'],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
+<script>
+    // Pass PHP data to JavaScript
+    const programData = <?= json_encode($programData) ?>;
+    const labData = <?= json_encode($labData) ?>;
+
+    // Program distribution chart
+    const programLabels = programData.map(item => item.course);
+    const programCounts = programData.map(item => item.count);
+
+    const programCtx = document.getElementById('programChart').getContext('2d');
+    const programChart = new Chart(programCtx, {
+        type: 'doughnut',
+        data: {
+            labels: programLabels,
+            datasets: [{
+                data: programCounts,
+                backgroundColor: ['#20c997', '#dc3545', '#fd7e14', '#6f42c1', '#ffc107', '#17a2b8', '#28a745'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    display: true
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        display: true
-                    }
-                },
-                cutout: '60%'
-            }
-        });
-    </script>
+            cutout: '60%'
+        }
+    });
+
+    // Laboratory usage chart
+    const labLabels = labData.map(item => item.laboratory_number);
+    const labCounts = labData.map(item => item.count);
+
+    const labCtx = document.getElementById('labChart').getContext('2d');
+    const labChart = new Chart(labCtx, {
+        type: 'doughnut',
+        data: {
+            labels: labLabels,
+            datasets: [{
+                data: labCounts,
+                backgroundColor: ['#ff9cbb', '#6cb2eb', '#6ee7b7', '#ffd54f', '#ff6f61', '#9c27b0', '#3f51b5'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    display: true
+                }
+            },
+            cutout: '60%'
+        }
+    });
+</script>
 </body>
 </html>
