@@ -143,25 +143,49 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     .profile-info p {
         margin: 10px 0;
     }
-    .announcement-container {
-        margin: 20px;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .announcement-title {
-        font-size: 20px;
-        font-weight: bold;
-    }
-    .announcement-content {
-        margin-top: 10px;
-    }
-    .announcement-date {
-        font-size: 12px;
-        color: gray;
-    }
-    
+    .announcement-box {
+    width: 100%;
+    max-width: 800px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+}
+
+.announcement-box h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
+
+.announcement-content {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.announcement-item {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.announcement-item h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #004d99;
+}
+
+.announcement-item p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.announcement-item small {
+    font-size: 12px;
+    color: #888;
+}
     .close {
         color: #aaa;
         float: right;
@@ -235,23 +259,22 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     </div>
 </div>
 
-<!-- Announcements Section -->
-<div class="announcement-container">
-    <h2>Announcements</h2>
-    <?php if (empty($announcements)): ?>
-        <p>No announcements available.</p>
-    <?php else: ?>
-        <?php foreach ($announcements as $announcement): ?>
-            <div class="announcement">
-                <p class="announcement-title"><?= htmlspecialchars($announcement['title']); ?></p>
-                <p class="announcement-content"><?= nl2br(htmlspecialchars($announcement['content'])); ?></p>
-                <p class="announcement-date">Posted on: <?= htmlspecialchars($announcement['created_at']); ?></p>
-                <hr>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+<div class="announcement-box">
+    <h3>Announcements</h3>
+    <div class="announcement-content">
+        <?php if (count($announcements) > 0): ?>
+            <?php foreach ($announcements as $announcement): ?>
+                <div class="announcement-item">
+                    <h4><?= htmlspecialchars($announcement['title']) ?></h4>
+                    <p><?= nl2br(htmlspecialchars($announcement['content'])) ?></p>
+                    <small>Posted on <?= htmlspecialchars($announcement['created_at']) ?></small>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>No announcements available.</p>
+        <?php endif; ?>
+    </div>
 </div>
-
 
 <script>
 function openNav() {

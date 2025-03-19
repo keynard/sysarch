@@ -41,6 +41,22 @@ $sitInStmt = $conn->prepare($sitInQuery);
 $sitInStmt->execute();
 $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_announcement'])) {
+    $title = trim($_POST['title']);
+    $content = trim($_POST['content']);
+    $adminId = $_SESSION['admin_id']; // Assuming admin_id is stored in the session
+
+    $addQuery = "INSERT INTO announcement (admin_id, title, content) VALUES (:admin_id, :title, :content)";
+    $addStmt = $conn->prepare($addQuery);
+    $addStmt->bindParam(':admin_id', $adminId, PDO::PARAM_INT);
+    $addStmt->bindParam(':title', $title, PDO::PARAM_STR);
+    $addStmt->bindParam(':content', $content, PDO::PARAM_STR);
+    $addStmt->execute();
+
+    echo "<script>alert('Announcement added successfully.'); window.location.href='admin.php';</script>";
+    exit();
+}
+
 // Handle reservation approval/rejection
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     $reservationId = $_POST['reservation_id'];
@@ -66,6 +82,13 @@ $labQuery = "SELECT laboratory_number, COUNT(*) as count FROM SitIn_Log GROUP BY
 $labStmt = $conn->prepare($labQuery);
 $labStmt->execute();
 $labData = $labStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// Fetch announcements
+$announcementQuery = "SELECT announcement_id, title, content, created_at FROM announcement ORDER BY created_at DESC";
+$announcementStmt = $conn->prepare($announcementQuery);
+$announcementStmt->execute();
+$announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -125,11 +148,83 @@ $labData = $labStmt->fetchAll(PDO::FETCH_ASSOC);
         .charts-container {
             display: flex;
             justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
             margin-bottom: 30px;
         }
+        .chart-box {
+            width: 45%;
+            max-width: 400px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .announcement-box {
+            width: 45%;
+            max-width: 400px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .announcement-box h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .announcement-content {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .announcement-item {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .announcement-item h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #004d99;
+        }
+
+        .announcement-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .announcement-item small {
+            font-size: 12px;
+            color: #888;
+        }
+        .announcement-input-box {
+    width: 45%;
+    max-width: 400px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.announcement-input-box h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
         .chart-wrapper {
             width: 45%;
             max-width: 400px;
+        }
+        .chart-box h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
         }
         .table-controls {
             display: flex;
@@ -176,7 +271,7 @@ $labData = $labStmt->fetchAll(PDO::FETCH_ASSOC);
             <a  style="cursor: pointer;" onclick="document.getElementById('searchModal').style.display='block'">Search</a>
             <a href="#">Navigate</a>
             <a href="reservation_handler.php">Sit-in</a>
-            <a href="">Sit-in Records</a>
+            <a href="sitin_records.php">Sit-in Records</a>
             <a href="#">Sit-in Reports</a>
             <a href="#">Feedback Reports</a>
             <a href="#">Reservation</a>
@@ -185,16 +280,50 @@ $labData = $labStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="main-content">
-        <h2 class="page-title">Current Sit-in Records</h2>
+        <h2 class="page-title">ADMIN DASHBOARD</h2>
 
         <div class="charts-container">
-            <div class="chart-wrapper">
-                <canvas id="programChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="labChart"></canvas>
-            </div>
+    <!-- Program Distribution Chart -->
+    <div class="chart-box">
+        <h3>Program Distribution</h3>
+        <canvas id="programChart"></canvas>
+    </div>
+
+    <!-- Laboratory Usage Chart -->
+    <div class="chart-box">
+        <h3>Laboratory Usage</h3>
+        <canvas id="labChart"></canvas>
+    </div>
+
+    <div class="announcement-input-box">
+    <h3>Add Announcement</h3>
+    <form method="POST" action="admin.php" class="w3-container w3-card-4" style="padding: 20px;">
+        <label for="title"><b>Title</b></label>
+        <input type="text" id="title" name="title" class="w3-input w3-border" required>
+
+        <label for="content" style="margin-top: 10px;"><b>Content</b></label>
+        <textarea id="content" name="content" class="w3-input w3-border" rows="5" required></textarea>
+
+        <button type="submit" name="add_announcement" class="w3-button w3-blue" style="margin-top: 10px;">Add Announcement</button>
+    </form>
+</div>
+    <div class="announcement-box">
+        <h3>Announcements</h3>
+        <div class="announcement-content">
+            <?php if (count($announcements) > 0): ?>
+                <?php foreach ($announcements as $announcement): ?>
+                    <div class="announcement-item">
+                        <h4><?= htmlspecialchars($announcement['title']) ?></h4>
+                        <p><?= nl2br(htmlspecialchars($announcement['content'])) ?></p>
+                        <small>Posted on <?= htmlspecialchars($announcement['created_at']) ?></small>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>No announcements available.</p>
+            <?php endif; ?>
         </div>
+    </div>
+</div>
 
         <div class="table-controls">
             <div class="entries-selector">

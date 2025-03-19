@@ -34,23 +34,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     exit();
 }
 
-// Handle deletion of sit-in records
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_sitin_id'])) {
-    $sitinId = $_POST['delete_sitin_id'];
+// Handle logout of sit-in records
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['logout_sitin_id'])) {
+    $sitinId = $_POST['logout_sitin_id'];
 
-    $deleteQuery = "DELETE FROM SitIn_Log WHERE sitin_id = :sitin_id";
-    $deleteStmt = $conn->prepare($deleteQuery);
-    $deleteStmt->bindParam(':sitin_id', $sitinId, PDO::PARAM_INT);
-    $deleteStmt->execute();
+    $logoutQuery = "UPDATE SitIn_Log SET time_out = NOW() WHERE sitin_id = :sitin_id";
+    $logoutStmt = $conn->prepare($logoutQuery);
+    $logoutStmt->bindParam(':sitin_id', $sitinId, PDO::PARAM_INT);
+    $logoutStmt->execute();
 
-    echo "<script>alert('Sit-in record has been deleted.'); window.location.href='reservation_handler.php';</script>";
+    echo "<script>alert('Student has been logged out.'); window.location.href='reservation_handler.php';</script>";
     exit();
 }
 
-// Fetch approved records from SitIn_Log
-$sitInQuery = "SELECT l.sitin_id, s.student_number, s.firstname, s.lastname, l.laboratory_number, l.purpose, l.time_in 
+// Fetch approved records from SitIn_Log and remaining sessions
+$sitInQuery = "SELECT l.sitin_id, s.student_number, s.firstname, s.lastname, s.sessions, l.laboratory_number, l.purpose, l.time_in
                FROM SitIn_Log l
                JOIN students s ON l.student_id = s.student_id
+               WHERE l.time_out IS NULL
                ORDER BY l.time_in DESC";
 $sitInStmt = $conn->prepare($sitInQuery);
 $sitInStmt->execute();
@@ -112,15 +113,55 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
         .nav-links a:hover {
             color: rgb(5, 2, 2);
         }
+        .header {
+            background-color: #004d99;
+            color: white;
+            padding: 15px 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+        .nav-links {
+            display: flex;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+          
+            font-size: 14px;
+        }
+        .logout-btn {
+            background-color: #ffc107;
+            color: black;
+            border: none;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <div class="navbar">
-        <span>DASHBOARD</span>
+    <div class="header">
+        <h1>College of Computer Studies Admin</h1>
         <div class="nav-links">
             <a href="admin.php">Home</a>
-            <a href="logout.php">Logout</a>
+            
+           
+            
+            <a  style="cursor: pointer;" onclick="document.getElementById('searchModal').style.display='block'">Search</a>
+            <a href="#">Navigate</a>
+            <a href="reservation_handler.php">Sit-in</a>
+            <a href="sitin_records.php">Sit-in Records</a>
+            <a href="#">Sit-in Reports</a>
+            <a href="#">Feedback Reports</a>
+            <a href="#">Reservation</a>
+            <a class="logout-btn" href="dashboard_main.php">Log Out</a>
         </div>
     </div>
 
@@ -132,6 +173,7 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
                     <th>Sit-in ID</th>
                     <th>Student Number</th>
                     <th>Name</th>
+                    <th>Remaining Sessions</th>
                     <th>Laboratory Number</th>
                     <th>Purpose</th>
                     <th>Time In</th>
@@ -139,29 +181,30 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
                 </tr>
             </thead>
             <tbody>
-                <?php if (count($sitInLogs) > 0): ?>
-                    <?php foreach ($sitInLogs as $log): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($log['sitin_id']) ?></td>
-                            <td><?= htmlspecialchars($log['student_number']) ?></td>
-                            <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
-                            <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
-                            <td><?= htmlspecialchars($log['purpose']) ?></td>
-                            <td><?= htmlspecialchars($log['time_in']) ?></td>
-                            <td>
-                                <form method="POST" action="reservation_handler.php" style="display: inline;">
-                                    <input type="hidden" name="delete_sitin_id" value="<?= $log['sitin_id'] ?>">
-                                    <button type="submit" class="w3-button w3-red">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="7" style="text-align: center;">No approved records found.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
+    <?php if (count($sitInLogs) > 0): ?>
+        <?php foreach ($sitInLogs as $log): ?>
+            <tr>
+                <td><?= htmlspecialchars($log['sitin_id']) ?></td>
+                <td><?= htmlspecialchars($log['student_number']) ?></td>
+                <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
+                <td><?= htmlspecialchars($log['sessions']) ?></td>
+                <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
+                <td><?= htmlspecialchars($log['purpose']) ?></td>
+                <td><?= htmlspecialchars($log['time_in']) ?></td>
+                <td>
+                    <form method="POST" action="reservation_handler.php" style="display: inline;">
+                        <input type="hidden" name="logout_sitin_id" value="<?= $log['sitin_id'] ?>">
+                        <button type="submit" class="w3-button w3-red">Logout</button>
+                    </form>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="8" style="text-align: center;">No active sit-in records found.</td>
+        </tr>
+    <?php endif; ?>
+</tbody>
         </table>
     </div>
 </body>
