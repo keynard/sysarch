@@ -8,29 +8,74 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
+    $reservationId = $_POST['reservation_id'];
+    $labNumber = trim($_POST['lab_number']);
+    $purpose = trim($_POST['purpose']);
 
+    // Fetch the student ID from the reservation
+    $fetchStudentQuery = "SELECT student_id FROM reservations WHERE reservation_id = :reservation_id";
+    $fetchStudentStmt = $conn->prepare($fetchStudentQuery);
+    $fetchStudentStmt->bindParam(':reservation_id', $reservationId, PDO::PARAM_INT);
+    $fetchStudentStmt->execute();
+    $student = $fetchStudentStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($student) {
+        $studentId = $student['student_id'];
+
+        // Insert the sit-in record
+        $insertSitInQuery = "INSERT INTO SitIn_Log (student_id, laboratory_number, purpose, time_in) 
+                             VALUES (:student_id, :lab_number, :purpose, NOW())";
+        $insertSitInStmt = $conn->prepare($insertSitInQuery);
+        $insertSitInStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+        $insertSitInStmt->bindParam(':lab_number', $labNumber, PDO::PARAM_STR);
+        $insertSitInStmt->bindParam(':purpose', $purpose, PDO::PARAM_STR);
+        $insertSitInStmt->execute();
+
+        // Update the reservation status to "completed"
+        $updateReservationQuery = "UPDATE reservations SET status = 'completed' WHERE reservation_id = :reservation_id";
+        $updateReservationStmt = $conn->prepare($updateReservationQuery);
+        $updateReservationStmt->bindParam(':reservation_id', $reservationId, PDO::PARAM_INT);
+        $updateReservationStmt->execute();
+
+        echo "<script>alert('Sit-in record added successfully.'); window.location.href='admin.php';</script>";
+        exit();
+    } else {
+        echo "<script>alert('Invalid reservation ID.'); window.location.href='admin.php';</script>";
+        exit();
+    }
+}
+// Fetch pending reservations
+$pendingReservationsQuery = "SELECT r.reservation_id, s.student_number, s.firstname, s.lastname, 
+                             r.laboratory_number, r.purpose, r.status, r.created_at 
+                             FROM reservations r
+                             JOIN students s ON r.student_id = s.student_id
+                             WHERE r.status = 'pending'";
+$pendingReservationsStmt = $conn->prepare($pendingReservationsQuery);
+$pendingReservationsStmt->execute();
+$pendingReservations = $pendingReservationsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch pending reservations with optional search
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-$reservationQuery = "SELECT r.reservation_id, s.student_number, s.firstname, s.lastname, r.laboratory_number, r.purpose, r.status, r.created_at 
-                     FROM reservations r
-                     JOIN students s ON r.student_id = s.student_id
-                     WHERE r.status = 'pending'";
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+$studentQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level 
+                 FROM students";
 
 if (!empty($search)) {
-    $reservationQuery .= " AND (s.student_number LIKE :search OR s.firstname LIKE :search OR s.lastname LIKE :search)";
+    $studentQuery .= " WHERE student_number LIKE :search OR firstname LIKE :search OR lastname LIKE :search";
 }
 
-$reservationStmt = $conn->prepare($reservationQuery);
+$studentStmt = $conn->prepare($studentQuery);
 
 if (!empty($search)) {
     $searchParam = "%$search%";
-    $reservationStmt->bindParam(':search', $searchParam, PDO::PARAM_STR);
+    $studentStmt->bindParam(':search', $searchParam, PDO::PARAM_STR);
 }
 
-$reservationStmt->execute();
-$pendingReservations = $reservationStmt->fetchAll(PDO::FETCH_ASSOC);
+$studentStmt->execute();
+$students = $studentStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch sit-in logs
 $sitInQuery = "SELECT l.sitin_id, s.student_number, s.firstname, s.lastname, l.laboratory_number, l.purpose, l.time_in, l.time_out
@@ -356,33 +401,65 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         </tr>
     </thead>
     <tbody>
-    <?php if (count($pendingReservations) > 0): ?>
-        <?php foreach ($pendingReservations as $reservation): ?>
+        <?php if (count($pendingReservations) > 0): ?>
+            <?php foreach ($pendingReservations as $reservation): ?>
+                <tr>
+                    <td><?= htmlspecialchars($reservation['reservation_id']) ?></td>
+                    <td><?= htmlspecialchars($reservation['student_number']) ?></td>
+                    <td><?= htmlspecialchars($reservation['firstname'] . ' ' . $reservation['lastname']) ?></td>
+                    <td><?= htmlspecialchars($reservation['laboratory_number']) ?></td>
+                    <td><?= htmlspecialchars($reservation['purpose']) ?></td>
+                    <td><?= htmlspecialchars($reservation['status']) ?></td>
+                    <td><?= htmlspecialchars($reservation['created_at']) ?></td>
+                    <td>
+                        <button type="button" class="w3-button w3-blue" 
+                                onclick="openSitInModal(<?= $reservation['reservation_id'] ?>)">Sit-in</button>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        <?php else: ?>
             <tr>
-                <td><?= htmlspecialchars($reservation['reservation_id']) ?></td>
-                <td><?= htmlspecialchars($reservation['student_number']) ?></td>
-                <td><?= htmlspecialchars($reservation['firstname'] . ' ' . $reservation['lastname']) ?></td>
-                <td><?= htmlspecialchars($reservation['laboratory_number']) ?></td>
-                <td><?= htmlspecialchars($reservation['purpose']) ?></td>
-                <td><?= htmlspecialchars($reservation['status']) ?></td>
-                <td><?= htmlspecialchars($reservation['created_at']) ?></td>
-                <td>
-                    <form method="POST" action="reservation_handler.php" style="display: inline;">
-                        <input type="hidden" name="reservation_id" value="<?= $reservation['reservation_id'] ?>">
-                        <button type="submit" name="action" value="approve" class="w3-button w3-green">Approve</button>
-                        <button type="submit" name="action" value="reject" class="w3-button w3-red">Reject</button>
-                    </form>
-                </td>
+                <td colspan="8" style="text-align: center;">No pending reservations found.</td>
             </tr>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <tr>
-            <td colspan="8" style="text-align: center;">No pending reservations found.</td>
-        </tr>
-    <?php endif; ?>
-</tbody>
+        <?php endif; ?>
+    </tbody>
 </table>
     </div>
+
+    <?php if (!empty($search)): ?>
+    <h3>Search Results</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Student Number</th>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Year Level</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (count($students) > 0): ?>
+                <?php foreach ($students as $student): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($student['student_number']) ?></td>
+                        <td><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']) ?></td>
+                        <td><?= htmlspecialchars($student['course']) ?></td>
+                        <td><?= htmlspecialchars($student['year_level']) ?></td>
+                        <td>
+                            <button type="button" class="w3-button w3-blue" 
+                                    onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" style="text-align: center;">No students found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
 
     
     <!-- Search Modal -->
@@ -406,7 +483,31 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         </form>
     </div>
 </div>
+<!-- Sit-in Modal -->
+<div id="sitinModal" class="w3-modal" style="display:none;">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+        <header class="w3-container w3-blue">
+            <span onclick="document.getElementById('sitinModal').style.display='none'" 
+                  class="w3-button w3-display-topright">&times;</span>
+            <h2>Set Sit-in Details</h2>
+        </header>
+        <form method="POST" action="admin.php" class="w3-container">
+            <div class="w3-section">
+                <input type="hidden" id="reservation_id" name="reservation_id">
+                <label for="lab-number"><b>Laboratory Number</b></label>
+                <input type="text" id="lab-number" name="lab_number" class="w3-input w3-border" required>
 
+                <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
+                <textarea id="purpose" name="purpose" class="w3-input w3-border" rows="5" required></textarea>
+            </div>
+            <footer class="w3-container w3-light-grey">
+                <button type="button" class="w3-button w3-red" onclick="document.getElementById('sitinModal').style.display='none'">Cancel</button>
+                <button type="submit" name="set_sitin" class="w3-button w3-blue">Submit</button>
+            </footer>
+        </form>
+    </div>
+</div>
+</div>
 <script>
     // Pass PHP data to JavaScript
     const programData = <?= json_encode($programData) ?>;
@@ -469,6 +570,11 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
             cutout: '60%'
         }
     });
+
+    function openSitInModal(reservationId) {
+        document.getElementById('reservation_id').value = reservationId; // Set the reservation ID in the hidden input
+        document.getElementById('sitinModal').style.display = 'block'; // Show the modal
+    }
 </script>
 </body>
 </html>
