@@ -12,9 +12,9 @@ if (!isset($_SESSION['admin_id'])) {
 $sitInLogs = [];
 try {
     $sitInQuery = "SELECT l.sitin_id, s.student_number, s.firstname, s.lastname, l.laboratory_number, l.purpose, l.time_in, l.time_out
-                   FROM SitIn_Log l
-                   JOIN students s ON l.student_id = s.student_id
-                   ORDER BY l.time_in DESC";
+               FROM SitIn_Log l
+               JOIN students s ON l.student_id = s.student_id
+               ORDER BY l.time_in DESC";
     $sitInStmt = $conn->prepare($sitInQuery);
     $sitInStmt->execute();
     $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -211,38 +211,28 @@ try {
                 <th>Purpose</th>
                 <th>Time In</th>
                 <th>Time Out</th>
-                <th>Actions</th>
+                <th>Time Out</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (count($sitInLogs) > 0): ?>
-                <?php foreach ($sitInLogs as $log): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($log['sitin_id']) ?></td>
-                        <td><?= htmlspecialchars($log['student_number']) ?></td>
-                        <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
-                        <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
-                        <td><?= htmlspecialchars($log['purpose']) ?></td>
-                        <td><?= htmlspecialchars($log['time_in']) ?></td>
-                        <td><?= htmlspecialchars($log['time_out'] ?? 'N/A') ?></td>
-                        <td>
-                            <?php if (is_null($log['time_out'])): ?>
-                                <form method="POST" action="reservation_handler.php" style="display: inline;">
-                                    <input type="hidden" name="logout_sitin_id" value="<?= $log['sitin_id'] ?>">
-                                    <button type="submit" class="w3-button w3-red">Logout</button>
-                                </form>
-                            <?php else: ?>
-                                Logged Out
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="8" style="text-align: center;">No sit-in records found.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
+    <?php if (count($sitInLogs) > 0): ?>
+        <?php foreach ($sitInLogs as $log): ?>
+            <tr>
+                <td><?= htmlspecialchars($log['sitin_id']) ?></td>
+                <td><?= htmlspecialchars($log['student_number']) ?></td>
+                <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
+                <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
+                <td><?= htmlspecialchars($log['purpose']) ?></td>
+                <td><?= htmlspecialchars($log['time_in']) ?></td>
+                <td><?= htmlspecialchars($log['time_out'] ?? 'N/A') ?></td>
+            </tr>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="7" style="text-align: center;">No sit-in records found.</td>
+        </tr>
+    <?php endif; ?>
+</tbody>
     </table>
 </div>
     <script>

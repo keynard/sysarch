@@ -33,6 +33,7 @@ CREATE TABLE SitIn_Log (
     time_in DATETIME DEFAULT CURRENT_TIMESTAMP,
     laboratory_number VARCHAR(50) NOT NULL,
     purpose VARCHAR(255) NOT NULL,
+    time_out DATETIME NULL,
     FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
 );
 

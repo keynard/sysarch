@@ -89,6 +89,8 @@ $announcementQuery = "SELECT announcement_id, title, content, created_at FROM an
 $announcementStmt = $conn->prepare($announcementQuery);
 $announcementStmt->execute();
 $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -204,19 +206,19 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
             color: #888;
         }
         .announcement-input-box {
-    width: 45%;
-    max-width: 400px;
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+            width: 45%;
+            max-width: 400px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
-.announcement-input-box h3 {
-    margin-bottom: 15px;
-    font-size: 18px;
-    color: #333;
-}
+        .announcement-input-box h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #333;
+        }
         .chart-wrapper {
             width: 45%;
             max-width: 400px;

@@ -143,49 +143,7 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     .profile-info p {
         margin: 10px 0;
     }
-    .announcement-box {
-    width: 100%;
-    max-width: 800px;
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin: 20px auto;
-}
-
-.announcement-box h3 {
-    margin-bottom: 15px;
-    font-size: 18px;
-    color: #333;
-}
-
-.announcement-content {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.announcement-item {
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-}
-
-.announcement-item h4 {
-    margin: 0;
-    font-size: 16px;
-    color: #004d99;
-}
-
-.announcement-item p {
-    margin: 5px 0;
-    font-size: 14px;
-    color: #555;
-}
-
-.announcement-item small {
-    font-size: 12px;
-    color: #888;
-}
+   
     .close {
         color: #aaa;
         float: right;
@@ -198,6 +156,105 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
         text-decoration: none;
         cursor: pointer;
     }
+    .boxes-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* Modify these existing styles */
+.announcement-box,
+.rules-box {
+    width: 100%; /* This makes each box take equal space */
+    max-width: none; /* Remove the max-width constraint */
+    margin: 0; /* Remove margin as it's handled by the container */
+}
+.announcement-header,
+.rules-header {
+    background-color: #1a4c8b;
+    color: white;
+    padding: 12px 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.announcement-header h3,
+.rules-header h3 {
+    margin: 0;
+}
+
+.announcement-content,
+.rules-content {
+    background-color: white;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.announcement-item {
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+}
+.announcement-item {
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.university-heading {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.university-heading h4 {
+    font-size: 18px;
+    margin: 5px 0;
+    color: #000;
+}
+
+.university-heading h5 {
+    font-size: 16px;
+    margin: 5px 0;
+    color: #000;
+}
+
+.university-heading h6 {
+    font-size: 15px;
+    margin: 5px 0;
+    font-weight: bold;
+    color: #000;
+}
+
+.rules-intro {
+    margin-bottom: 15px;
+}
+
+.rules-list {
+    padding-left: 25px;
+}
+
+.rules-list li {
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+@media (max-width: 768px) {
+    .boxes-container {
+        flex-direction: column;
+    }
+    
+    .announcement-box,
+    .rules-box {
+        margin-bottom: 20px;
+    }
+}
+.announcement-info {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -259,22 +316,73 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     </div>
 </div>
 
-<div class="announcement-box">
-    <h3>Announcements</h3>
-    <div class="announcement-content">
-        <?php if (count($announcements) > 0): ?>
-            <?php foreach ($announcements as $announcement): ?>
-                <div class="announcement-item">
-                    <h4><?= htmlspecialchars($announcement['title']) ?></h4>
-                    <p><?= nl2br(htmlspecialchars($announcement['content'])) ?></p>
-                    <small>Posted on <?= htmlspecialchars($announcement['created_at']) ?></small>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>No announcements available.</p>
-        <?php endif; ?>
+<div class="boxes-container">
+    <div class="announcement-box">
+        <div class="announcement-header">
+            <h3>Announcements</h3>
+        </div>
+        <div class="announcement-content">
+            <?php if (count($announcements) > 0): ?>
+                <?php foreach ($announcements as $announcement): ?>
+                    <div class="announcement-item">
+                    <div class="announcement-info">
+                            CCS Admin | <?php echo htmlspecialchars(date("Y-M-d", strtotime($announcement['created_at']))); ?>
+                        </div>
+                        <h4><?= htmlspecialchars($announcement['title']) ?></h4>
+                        <p><?= nl2br(htmlspecialchars($announcement['content'])) ?></p>
+                        <small>Posted on <?= htmlspecialchars($announcement['created_at']) ?></small>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>No announcements available.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="rules-box">
+    <div class="rules-header">
+        <h3>Rules and Regulations</h3>
+    </div>
+    <div class="rules-content">
+        <div class="university-heading">
+            <h4>University of Cebu</h4>
+            <h5>COLLEGE OF INFORMATION & COMPUTER STUDIES</h5>
+            <h6>LABORATORY RULES AND REGULATIONS</h6>
+        </div>
+        <div class="rules-intro">
+            <p>To avoid embarrassment and maintain camaraderie with your friends and superiors at our laboratories, please observe the following:</p>
+        </div>
+        <ol class="rules-list">
+            <li>Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans, and other personal equipment must be switched off.</li>
+            <li>Games are not allowed inside the lab. This includes computer-related games, card games, and other games that may disturb the operation of the lab.</li>
+            <li>Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing software are strictly prohibited.</li>
+            <li>Getting access to other websites not related to the course (especially pornographic and illicit sites) is strictly prohibited.</li>
+            <li>Deleting computer files and changing the set-up of the computer is a major offense.</li>
+            <li>Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".</li>
+            <li>Observe proper decorum while inside the laboratory.
+                <ul>
+                    <li>Do not enter the lab unless the instructor is present.</li>
+                    <li>All bags, knapsacks, and the like must be deposited at the counter.</li>
+                    <li>Follow the seating arrangement of your instructor.</li>
+                    <li>At the end of class, all software programs must be closed.</li>
+                    <li>Return all chairs to their proper places after use.</li>
+                </ul>
+            </li>
+            <li>Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.</li>
+            <li>Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the community, including public displays of physical intimacy, are not tolerated.</li>
+            <li>Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</li>
+            <li>For serious offenses, lab personnel may call the Civil Security Office (CSU) for assistance.</li>
+            <li>Any technical problem or difficulty must be reported to the laboratory supervisor, student assistant, or instructor immediately.</li>
+        </ol>
+        <div class="disciplinary-actions">
+            <h6>DISCIPLINARY ACTION</h6>
+            <p><strong>First Offense:</strong> The Head, Dean, or OIC recommends to the Guidance Center a suspension from classes for each offender.</p>
+            <p><strong>Second and Subsequent Offenses:</strong> A recommendation for a heavier sanction will be endorsed to the Guidance Center.</p>
+        </div>
     </div>
 </div>
+
+
 
 <script>
 function openNav() {

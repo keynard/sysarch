@@ -1,3 +1,20 @@
+<?php
+session_start();
+include 'db.php';
+
+try {
+    // Fetch announcements from the database
+    $announcementQuery = "SELECT title, content, created_at 
+    FROM announcement 
+    ORDER BY created_at DESC";
+
+    $announcementStmt = $conn->prepare($announcementQuery);
+    $announcementStmt->execute();
+    $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,30 +100,32 @@
             <a href="#" class="w3-bar-item w3-button">Community ▼</a>
             <a href="#" class="w3-bar-item w3-button">About</a>
             <a href="login.php" class="w3-bar-item w3-button">Login</a>
-            <a href="#" class="w3-bar-item w3-button">Register</a>
+            <a href="register.php" class="w3-bar-item w3-button">Register</a>
         </div>
     </nav>
 
     
     <div class="w3-container w3-margin-top">
-        <div class="w3-card announcement-box">
-            <div class="w3-container announcement-header">Announcement</div>
-            <div class="w3-container announcement-content">
-                <div class="announcement-item">
-                    <div class="announcement-info">CCS Admin | 2025-Mar-05</div>
-                    <div class="announcement-message">
-                        dasdasd
+    <div class="w3-card announcement-box">
+        <div class="w3-container announcement-header">Announcement</div>
+        <div class="w3-container announcement-content">
+            <?php if (!empty($announcements)): ?>
+                <?php foreach ($announcements as $announcement): ?>
+                    <div class="announcement-item">
+                        <div class="announcement-info">
+                            CCS Admin | <?php echo htmlspecialchars(date("Y-M-d", strtotime($announcement['created_at']))); ?>
+                        </div>
+                        <div class="announcement-message">
+                            <strong><?php echo htmlspecialchars($announcement['title']); ?></strong><br>
+                            <?php echo nl2br(htmlspecialchars($announcement['content'])); ?>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="announcement-item">
-                    <div class="announcement-info">CCS Admin | 2025-Mar-05</div>
-                    <div class="announcement-message">
-                        dasdasd
-                    </div>
-                </div>
-            </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>No announcements available.</p>
+            <?php endif; ?>
         </div>
     </div>
+</div>
 </body>
 </html>
