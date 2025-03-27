@@ -447,8 +447,8 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?= htmlspecialchars($student['course']) ?></td>
                         <td><?= htmlspecialchars($student['year_level']) ?></td>
                         <td>
-                            <button type="button" class="w3-button w3-blue" 
-                                    onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
+                        <button type="button" class="w3-button w3-blue" 
+                        onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -491,9 +491,9 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
                   class="w3-button w3-display-topright">&times;</span>
             <h2>Set Sit-in Details</h2>
         </header>
-        <form method="POST" action="admin.php" class="w3-container">
+        <form method="POST" action="reservation_handler.php" class="w3-container">
             <div class="w3-section">
-                <input type="hidden" id="reservation_id" name="reservation_id">
+                <input type="hidden" id="student_id" name="student_id"> <!-- Hidden input for student ID -->
                 <label for="lab-number"><b>Laboratory Number</b></label>
                 <input type="text" id="lab-number" name="lab_number" class="w3-input w3-border" required>
 
@@ -506,7 +506,6 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
             </footer>
         </form>
     </div>
-</div>
 </div>
 <script>
     // Pass PHP data to JavaScript
@@ -570,11 +569,12 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
             cutout: '60%'
         }
     });
+    function openSitInModal(studentId) {
+    document.getElementById('student_id').value = studentId; // Set the student ID in the hidden input
+    document.getElementById('sitinModal').style.display = 'block'; // Show the modal
+}
 
-    function openSitInModal(reservationId) {
-        document.getElementById('reservation_id').value = reservationId; // Set the reservation ID in the hidden input
-        document.getElementById('sitinModal').style.display = 'block'; // Show the modal
-    }
+   
 </script>
 </body>
 </html>

@@ -7,7 +7,33 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: admin_login.php");
     exit();
 }
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
+    $studentId = $_POST['student_id'];
+    $labNumber = trim($_POST['lab_number']);
+    $purpose = trim($_POST['purpose']);
 
+    // Validate the student ID
+    if (!empty($studentId)) {
+        try {
+            // Insert the sit-in record into the database
+            $insertSitInQuery = "INSERT INTO SitIn_Log (student_id, laboratory_number, purpose, time_in) 
+                                 VALUES (:student_id, :lab_number, :purpose, NOW())";
+            $insertSitInStmt = $conn->prepare($insertSitInQuery);
+            $insertSitInStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+            $insertSitInStmt->bindParam(':lab_number', $labNumber, PDO::PARAM_STR);
+            $insertSitInStmt->bindParam(':purpose', $purpose, PDO::PARAM_STR);
+            $insertSitInStmt->execute();
+
+            echo "<script>alert('Sit-in record added successfully.'); window.location.href='reservation_handler.php';</script>";
+            exit();
+        } catch (Exception $e) {
+            error_log("Error inserting sit-in record: " . $e->getMessage());
+            echo "<script>alert('Failed to add sit-in record. Please try again.');</script>";
+        }
+    } else {
+        echo "<script>alert('Invalid student ID.');</script>";
+    }
+}
 // Handle reservation approval/rejection
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     $reservationId = $_POST['reservation_id'];
