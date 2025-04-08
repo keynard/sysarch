@@ -9,6 +9,7 @@ if (!isset($_SESSION['student_number'])) {
 }
 
 
+
 // Fetch student details based on student_number
 $student_number = $_SESSION['student_number'];
 
@@ -263,6 +264,7 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     <span class="menu-icon" onclick="openNav()">&#9776;</span>
     <span>DASHBOARD</span>
     <div class="nav-links">
+        <a  onclick="document.getElementById('feedbackModal').style.display='block'">Feedback</a>
         <a>Notification</a>
         <a href="update_profile.php" class="edit-prof">Edit Profile</a>
         <a  onclick="document.getElementById('reservationModal').style.display='block'">Reservation</a>
@@ -292,6 +294,27 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
         <?php endif; ?>
     </div>
 </div>
+<!-- Feedback Modal -->
+<div class="w3-modal" id="feedbackModal" style="display:none;">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+        <header class="w3-container w3-green">
+            <span onclick="document.getElementById('feedbackModal').style.display='none'" 
+                  class="w3-button w3-display-topright">&times;</span>
+            <h2>Submit Feedback</h2>
+        </header>
+        <form action="feedback.php" method="POST" class="w3-container">
+            <div class="w3-section">
+                <label for="feedback_text"><b>Your Feedback</b></label>
+                <textarea id="feedback_text" name="feedback_text" class="w3-input w3-border" rows="5" placeholder="Enter your feedback here..." required></textarea>
+            </div>
+            <footer class="w3-container w3-light-grey">
+                <button type="button" class="w3-button w3-red" onclick="document.getElementById('feedbackModal').style.display='none'">Cancel</button>
+                <button type="submit" class="w3-button w3-green">Submit</button>
+            </footer>
+        </form>
+    </div>
+</div>
+
 <!-- Reservation Modal -->
 <div class="w3-modal" id="reservationModal" style="display:none;">
     <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">

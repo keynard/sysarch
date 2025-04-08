@@ -45,6 +45,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
         exit();
     }
 }
+
+
 // Fetch pending reservations
 $pendingReservationsQuery = "SELECT r.reservation_id, s.student_number, s.firstname, s.lastname, 
                              r.laboratory_number, r.purpose, r.status, r.created_at 
@@ -320,7 +322,7 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="reservation_handler.php">Sit-in</a>
             <a href="sitin_records.php">Sit-in Records</a>
             <a href="#">Sit-in Reports</a>
-            <a href="#">Feedback Reports</a>
+            <a href="feedback_report.php">Feedback Reports</a>
             <a href="#">Reservation</a>
             <a class="logout-btn" href="dashboard_main.php">Log Out</a>
         </div>

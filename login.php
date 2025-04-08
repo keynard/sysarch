@@ -2,7 +2,6 @@
 session_start();
 include 'db.php'; // Include PDO connection
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
@@ -23,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         // Check if the user is a student
-        $studentQuery = "SELECT student_number, password FROM students WHERE username = :username";
+        $studentQuery = "SELECT student_id, student_number, password FROM students WHERE username = :username";
         $studentStmt = $conn->prepare($studentQuery);
         $studentStmt->bindParam(':username', $username, PDO::PARAM_STR);
         $studentStmt->execute();
@@ -31,16 +30,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($student && password_verify($password, $student['password'])) {
             // Student login successful
-            $_SESSION['student_number'] = $student['student_number'];
-            $_SESSION['username'] = $username;
+            $_SESSION['student_id'] = $student['student_id']; // Store student_id in session
+            $_SESSION['student_number'] = $student['student_number']; // Store student_number in session
             header("Location: dashboard.php");
             exit();
         }
 
-        // If neither admin nor student credentials match
-        echo "<script>alert('Invalid username or password.');</script>";
+        // If login fails
+        echo "<script>alert('Invalid username or password.'); window.location.href='login.php';</script>";
     } catch (PDOException $e) {
-        die("Error: " . $e->getMessage()); // Better error handling
+        error_log("Error during login: " . $e->getMessage());
+        echo "<script>alert('An error occurred. Please try again later.'); window.location.href='login.php';</script>";
     }
 }
 ?>

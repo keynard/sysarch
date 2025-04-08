@@ -211,7 +211,7 @@ try {
                 <th>Purpose</th>
                 <th>Time In</th>
                 <th>Time Out</th>
-                <th>Time Out</th>
+               
             </tr>
         </thead>
         <tbody>
