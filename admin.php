@@ -47,6 +47,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
 }
 
 
+// Fetch laboratory numbers
+$labQuery = "SELECT DISTINCT laboratory_number FROM reservations"; // Replace 'laboratories' with your table name
+$labStmt = $conn->prepare($labQuery);
+$labStmt->execute();
+$laboratories = $labStmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Fetch pending reservations
 $pendingReservationsQuery = "SELECT r.reservation_id, s.student_number, s.firstname, s.lastname, 
                              r.laboratory_number, r.purpose, r.status, r.created_at 
@@ -470,7 +476,7 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         <header class="w3-container w3-blue">
             <span onclick="document.getElementById('searchModal').style.display='none'" 
                   class="w3-button w3-display-topright">&times;</span>
-            <h2>Search Reservations</h2>
+            <h2>Search</h2>
         </header>
         <form method="GET" action="admin.php" class="w3-container">
             <div class="w3-section">
@@ -496,8 +502,16 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         <form method="POST" action="reservation_handler.php" class="w3-container">
             <div class="w3-section">
                 <input type="hidden" id="student_id" name="student_id"> <!-- Hidden input for student ID -->
+
                 <label for="lab-number"><b>Laboratory Number</b></label>
-                <input type="text" id="lab-number" name="lab_number" class="w3-input w3-border" required>
+                <select id="lab-number" name="lab_number" class="w3-input w3-border" required>
+                    <option value="" disabled selected>Select Laboratory</option>
+                    <option value="Lab 1">Lab 524</option>
+                    <option value="Lab 2">Lab 526</option>
+                    <option value="Lab 3">Lab 544</option>
+                    <option value="Lab 4">Lab 528</option>
+                    <option value="Lab 5">Lab 530</option>
+                </select>
 
                 <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
                 <textarea id="purpose" name="purpose" class="w3-input w3-border" rows="5" required></textarea>

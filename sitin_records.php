@@ -52,6 +52,19 @@ try {
     <title>Sit-in Records</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   <!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
     <style>
         table {
             width: 100%;
@@ -182,9 +195,9 @@ try {
         </div>
     </div>
 
+  
     <!-- Table Controls -->
-    <!-- Table Controls -->
-<div class="table-controls">
+    <div class="table-controls">
     <div class="entries-selector">
         <label for="entries">Show</label>
         <select id="entries">
@@ -195,13 +208,12 @@ try {
         </select>
         <span>entries per page</span>
     </div>
-    <div class="search-box-container">
-        <input type="text" placeholder="Search..." class="search-box">
-    </div>
+    
 </div>
 
-    <!-- Table -->
-    <table>
+<!-- Table with Export Buttons -->
+<div id="sitInTableWrapper">
+    <table id="sitInTable">
         <thead>
             <tr>
                 <th>Sit-in ID</th>
@@ -211,28 +223,27 @@ try {
                 <th>Purpose</th>
                 <th>Time In</th>
                 <th>Time Out</th>
-               
             </tr>
         </thead>
         <tbody>
-    <?php if (count($sitInLogs) > 0): ?>
-        <?php foreach ($sitInLogs as $log): ?>
-            <tr>
-                <td><?= htmlspecialchars($log['sitin_id']) ?></td>
-                <td><?= htmlspecialchars($log['student_number']) ?></td>
-                <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
-                <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
-                <td><?= htmlspecialchars($log['purpose']) ?></td>
-                <td><?= htmlspecialchars($log['time_in']) ?></td>
-                <td><?= htmlspecialchars($log['time_out'] ?? 'N/A') ?></td>
-            </tr>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <tr>
-            <td colspan="7" style="text-align: center;">No sit-in records found.</td>
-        </tr>
-    <?php endif; ?>
-</tbody>
+            <?php if (count($sitInLogs) > 0): ?>
+                <?php foreach ($sitInLogs as $log): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($log['sitin_id']) ?></td>
+                        <td><?= htmlspecialchars($log['student_number']) ?></td>
+                        <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
+                        <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
+                        <td><?= htmlspecialchars($log['purpose']) ?></td>
+                        <td><?= htmlspecialchars($log['time_in']) ?></td>
+                        <td><?= htmlspecialchars($log['time_out'] ?? 'N/A') ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="7" style="text-align: center;">No sit-in records found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
     </table>
 </div>
     <script>
@@ -300,5 +311,81 @@ try {
             }
         });
     </script>
+    
+    <script>
+    $(document).ready(function () {
+        const base64Logo = 'data:image/png;base64,REPLACE_THIS_WITH_YOUR_BASE64_STRING'; // Replace with your valid Base64 string
+
+        $('#sitInTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'csvHtml5',
+                    title: 'Sit-in Records',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'excelHtml5',
+                    title: 'Sit-in Records',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: 'Sit-in Records',
+                    customize: function (doc) {
+                        // Add logo to the top of the PDF
+                        doc.content.splice(0, 0, {
+                            alignment: 'center',
+                            image: uclogo-removebg-preview.png, // Use the static Base64 logo
+                            width: 100
+                        });
+
+                        // Add university and department headers
+                        doc.content.splice(1, 0, {
+                            alignment: 'center',
+                            text: [
+                                { text: 'University Name\n', fontSize: 18, bold: true },
+                                { text: 'Department of Computer Studies\n', fontSize: 16 }
+                            ]
+                        });
+                    },
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'print',
+                    title: '',
+                    customize: function (win) {
+                        $(win.document.body)
+                            .css('text-align', 'center')
+                            .prepend(
+                                '<img src="uclogo-removebg-preview.png" style="width:100px; height:auto; margin-bottom:20px;">' +
+                                '<h2>University Name</h2>' +
+                                '<h2>Department of Computer Studies</h2>'
+                            );
+                    },
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ]
+        });
+    });
+
+    // Helper function to convert an image to Base64
+    function getBase64Image(img) {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        return canvas.toDataURL('image/png').replace(/^data:image\/(png|jpg);base64,/, '');
+    }
+</script>
 </body>
 </html>
