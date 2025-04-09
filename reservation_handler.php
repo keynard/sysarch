@@ -222,6 +222,7 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
                         <input type="hidden" name="logout_sitin_id" value="<?= $log['sitin_id'] ?>">
                         <button type="submit" class="w3-button w3-red">Logout</button>
                     </form>
+                    
                 </td>
             </tr>
         <?php endforeach; ?>

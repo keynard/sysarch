@@ -506,11 +506,11 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
                 <label for="lab-number"><b>Laboratory Number</b></label>
                 <select id="lab-number" name="lab_number" class="w3-input w3-border" required>
                     <option value="" disabled selected>Select Laboratory</option>
-                    <option value="Lab 1">Lab 524</option>
-                    <option value="Lab 2">Lab 526</option>
-                    <option value="Lab 3">Lab 544</option>
-                    <option value="Lab 4">Lab 528</option>
-                    <option value="Lab 5">Lab 530</option>
+                    <option>Lab 524</option>
+                    <option>Lab 526</option>
+                    <option>Lab 544</option>
+                    <option>Lab 528</option>
+                    <option>Lab 530</option>
                 </select>
 
                 <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
