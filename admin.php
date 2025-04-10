@@ -46,7 +46,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
     }
 }
 
+// Fetch all students
+$allStudents = [];
+try {
+    $allStudentsQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level, sessions, email FROM students ORDER BY lastname ASC";
+    $allStudentsStmt = $conn->prepare($allStudentsQuery);
+    $allStudentsStmt->execute();
+    $allStudents = $allStudentsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error fetching all students: " . $e->getMessage());
+}
 
+// Highlighted student IDs from the search
+$highlightedStudents = [];
+$nonHighlightedStudents = [];
+if (!empty($_GET['search'])) {
+    $searchTerm = '%' . trim($_GET['search']) . '%';
+    $searchQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level, sessions, email 
+                    FROM students WHERE 
+                    student_number LIKE :search OR 
+                    firstname LIKE :search OR 
+                    lastname LIKE :search";
+    $searchStmt = $conn->prepare($searchQuery);
+    $searchStmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
+    $searchStmt->execute();
+    $highlightedStudents = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Filter out highlighted students from the full list
+    $highlightedIds = array_column($highlightedStudents, 'student_id');
+    $nonHighlightedStudents = array_filter($allStudents, function ($student) use ($highlightedIds) {
+        return !in_array($student['student_id'], $highlightedIds);
+    });
+} else {
+    $nonHighlightedStudents = $allStudents;
+}
 // Fetch laboratory numbers
 $labQuery = "SELECT DISTINCT laboratory_number FROM reservations"; // Replace 'laboratories' with your table name
 $labStmt = $conn->prepare($labQuery);
@@ -143,7 +176,43 @@ $announcementStmt = $conn->prepare($announcementQuery);
 $announcementStmt->execute();
 $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch students who are currently set in
+$currentSitInStudents = [];
+try {
+    $currentSitInQuery = "SELECT student_id FROM SitIn_Log WHERE time_out IS NULL";
+    $currentSitInStmt = $conn->prepare($currentSitInQuery);
+    $currentSitInStmt->execute();
+    $currentSitInStudents = $currentSitInStmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (Exception $e) {
+    error_log("Error fetching currently set-in students: " . $e->getMessage());
+}
 
+// Reset sessions for a specific student
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_student_id'])) {
+    $studentId = $_POST['reset_student_id'];
+    try {
+        $resetQuery = "UPDATE students SET sessions = 30 WHERE student_id = :student_id";
+        $resetStmt = $conn->prepare($resetQuery);
+        $resetStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+        $resetStmt->execute();
+        echo "<script>alert('Sessions reset to 30 for the selected student.'); window.location.href='admin.php';</script>";
+    } catch (Exception $e) {
+        error_log("Error resetting sessions for student: " . $e->getMessage());
+        echo "<script>alert('Failed to reset sessions for the selected student.'); window.location.href='admin.php';</script>";
+    }
+}
+
+// Reset sessions for all students
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])) {
+    try {
+        $resetAllQuery = "UPDATE students SET sessions = 30";
+        $conn->exec($resetAllQuery);
+        echo "<script>alert('Sessions reset to 30 for all students.'); window.location.href='admin.php';</script>";
+    } catch (Exception $e) {
+        error_log("Error resetting sessions for all students: " . $e->getMessage());
+        echo "<script>alert('Failed to reset sessions for all students.'); window.location.href='admin.php';</script>";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -313,6 +382,9 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .highlight {
+        background-color: #ffff99; /* Light yellow */
+    }
     </style>
 </head>
 <body>
@@ -434,39 +506,85 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
 </table>
     </div>
 
-    <?php if (!empty($search)): ?>
-    <h3>Search Results</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Student Number</th>
-                <th>Name</th>
-                <th>Course</th>
-                <th>Year Level</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (count($students) > 0): ?>
-                <?php foreach ($students as $student): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($student['student_number']) ?></td>
-                        <td><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']) ?></td>
-                        <td><?= htmlspecialchars($student['course']) ?></td>
-                        <td><?= htmlspecialchars($student['year_level']) ?></td>
-                        <td>
-                        <button type="button" class="w3-button w3-blue" 
-                        onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="5" style="text-align: center;">No students found.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+    <?php if (isset($highlightedStudents) || isset($nonHighlightedStudents)): ?>
+
+
+
+    <!-- All Students Section -->
+    <<h3>All Students</h3>
+<form method="POST" action="admin.php" style="margin-bottom: 20px;">
+    <button type="submit" name="reset_all_sessions" class="w3-button w3-blue">Reset All Sessions</button>
+</form>
+<table>
+    <thead>
+        <tr>
+            <th>Student Number</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Year Level</th>
+            <th>Email</th>
+            <th>Sessions</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Highlighted Students -->
+<?php if (count($highlightedStudents) > 0): ?>
+    <?php foreach ($highlightedStudents as $student): ?>
+        <tr style="background-color: #ffff99;">
+            <td><?= htmlspecialchars($student['student_number']) ?></td>
+            <td><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']) ?></td>
+            <td><?= htmlspecialchars($student['course']) ?></td>
+            <td><?= htmlspecialchars($student['year_level']) ?></td>
+            <td><?= htmlspecialchars($student['email']) ?></td>
+            <td><?= htmlspecialchars($student['sessions']) ?></td>
+            <td>
+                <?php if (in_array($student['student_id'], $currentSitInStudents)): ?>
+                    <span class="w3-text-green">Currently Set In</span>
+                <?php else: ?>
+                    <button type="button" class="w3-button w3-blue" 
+                            onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
+                <?php endif; ?>
+                <form method="POST" action="admin.php" style="display: inline;">
+                    <input type="hidden" name="reset_student_id" value="<?= $student['student_id'] ?>">
+                    <button type="submit" class="w3-button w3-red">Reset Sessions</button>
+                </form>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- Non-Highlighted Students -->
+<?php if (count($nonHighlightedStudents) > 0): ?>
+    <?php foreach ($nonHighlightedStudents as $student): ?>
+        <tr>
+            <td><?= htmlspecialchars($student['student_number']) ?></td>
+            <td><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']) ?></td>
+            <td><?= htmlspecialchars($student['course']) ?></td>
+            <td><?= htmlspecialchars($student['year_level']) ?></td>
+            <td><?= htmlspecialchars($student['email']) ?></td>
+            <td><?= htmlspecialchars($student['sessions']) ?></td>
+            <td>
+                <?php if (in_array($student['student_id'], $currentSitInStudents)): ?>
+                    <span class="w3-text-green">Currently Set In</span>
+                <?php else: ?>
+                    <button type="button" class="w3-button w3-blue" 
+                            onclick="openSitInModal(<?= htmlspecialchars($student['student_id']) ?>)">Set Sit-in</button>
+                <?php endif; ?>
+                <form method="POST" action="admin.php" style="display: inline;">
+                    <input type="hidden" name="reset_student_id" value="<?= htmlspecialchars($student['student_id']) ?>">
+                    <button type="submit" class="w3-button w3-red">Reset Sessions</button>
+                </form>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+<?php else: ?>
+    <tr>
+        <td colspan="7" style="text-align: center;">No students found.</td>
+    </tr>
+<?php endif; ?>
+    </tbody>
+</table>
 <?php endif; ?>
 
     
