@@ -8,6 +8,38 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
+// Handle session reset functionality
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Handle reset all sessions
+    if (isset($_POST['reset_all_sessions'])) {
+        try {
+            $reset_all_query = "UPDATE students SET sessions = 30";
+            $reset_all_stmt = $conn->prepare($reset_all_query);
+            $reset_all_stmt->execute();
+            echo "<script>alert('All students\' sessions have been reset to 30.'); window.location.href='admin.php';</script>";
+            exit();
+        } catch (Exception $e) {
+            echo "<script>alert('Error resetting sessions: " . $e->getMessage() . "'); window.location.href='admin.php';</script>";
+            exit();
+        }
+    }
+    
+    // Handle reset individual student session
+    if (isset($_POST['reset_student_session']) && isset($_POST['student_id'])) {
+        try {
+            $student_id = $_POST['student_id'];
+            $reset_student_query = "UPDATE students SET sessions = 30 WHERE student_id = ?";
+            $reset_student_stmt = $conn->prepare($reset_student_query);
+            $reset_student_stmt->execute([$student_id]);
+            echo "<script>alert('Student sessions have been reset to 30.'); window.location.href='admin.php';</script>";
+            exit();
+        } catch (Exception $e) {
+            echo "<script>alert('Error resetting student sessions: " . $e->getMessage() . "'); window.location.href='admin.php';</script>";
+            exit();
+        }
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
     $reservationId = $_POST['reservation_id'];
     $labNumber = trim($_POST['lab_number']);
@@ -65,16 +97,28 @@ $pendingReservations = $pendingReservationsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch pending reservations with optional search
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$search_type = isset($_GET['search_type']) ? trim($_GET['search_type']) : 'student_number';
 
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-
-$studentQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level 
-                 FROM students";
+$studentQuery = "SELECT * FROM students";
 
 if (!empty($search)) {
-    $studentQuery .= " WHERE student_number LIKE :search OR firstname LIKE :search OR lastname LIKE :search";
+    switch($search_type) {
+        case 'student_number':
+            $studentQuery .= " WHERE student_number LIKE :search";
+            break;
+        case 'name':
+            $studentQuery .= " WHERE CONCAT(firstname, ' ', lastname) LIKE :search";
+            break;
+        case 'course':
+            $studentQuery .= " WHERE course LIKE :search";
+            break;
+        case 'year_level':
+            $studentQuery .= " WHERE year_level LIKE :search";
+            break;
+    }
 }
 
+$studentQuery .= " ORDER BY lastname, firstname";
 $studentStmt = $conn->prepare($studentQuery);
 
 if (!empty($search)) {
@@ -313,29 +357,207 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .students-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .w3-table {
+            width: 100%;
+        }
+        .w3-table th {
+            background-color: #f5f5f5;
+        }
+        .action-buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-results-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .search-results-section h3 {
+            margin-top: 0;
+            color: #004d99;
+        }
+        .highlight-row {
+            background-color: #fff3cd !important;
+            transition: background-color 0.3s ease;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>College of Computer Studies Admin</h1>
         <div class="nav-links">
-            <a href="#">Home</a>
-            
-           
-            
-            <a  style="cursor: pointer;" onclick="document.getElementById('searchModal').style.display='block'">Search</a>
-            <a href="#">Navigate</a>
+            <a href="admin.php">Home</a>
+            <a style="cursor: pointer;" onclick="document.getElementById('searchModal').style.display='block'">Search</a>
             <a href="reservation_handler.php">Sit-in</a>
+            <a href="#">Navigate</a>
+            <a href="admin_reservation.php">Manage Reservations</a>
             <a href="sitin_records.php">Sit-in Records</a>
             <a href="#">Sit-in Reports</a>
-            <a href="feedback_report.php">Feedback Reports</a>
-            <a href="#">Reservation</a>
+            <a href="#">Feedback Reports</a>
             <a class="logout-btn" href="dashboard_main.php">Log Out</a>
         </div>
     </div>
 
     <div class="main-content">
         <h2 class="page-title">ADMIN DASHBOARD</h2>
+
+        <!-- Students Management Section -->
+        <div class="students-section">
+            <h3>Students Management</h3>
+            <div class="action-buttons" style="margin-bottom: 20px;">
+                <form method="POST" style="display: inline;">
+                    <button type="submit" name="reset_all_sessions" class="w3-button w3-blue w3-round" 
+                            onclick="return confirm('Are you sure you want to reset all students\' sessions to 30?')">
+                        Reset All Sessions
+                    </button>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="w3-table w3-striped w3-bordered">
+                    <thead>
+                        <tr>
+                            <th>Student Number</th>
+                            <th>Name</th>
+                            <th>Course</th>
+                            <th>Year Level</th>
+                            <th>Remaining Sessions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Fetch all students
+                        $students_query = "SELECT * FROM students ORDER BY lastname, firstname";
+                        $students_stmt = $conn->prepare($students_query);
+                        $students_stmt->execute();
+                        $all_students = $students_stmt->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        // Pagination
+                        $rows_per_page = 5;
+                        $total_rows = count($all_students);
+                        $total_pages = ceil($total_rows / $rows_per_page);
+                        
+                        // If there's a search, find the first matching student's page
+                        if (!empty($search)) {
+                            $found_page = 1;
+                            foreach ($all_students as $index => $student) {
+                                $matches = false;
+                                switch($search_type) {
+                                    case 'student_number':
+                                        $matches = stripos($student['student_number'], $search) !== false;
+                                        break;
+                                    case 'name':
+                                        $matches = stripos($student['firstname'] . ' ' . $student['lastname'], $search) !== false;
+                                        break;
+                                    case 'course':
+                                        $matches = stripos($student['course'], $search) !== false;
+                                        break;
+                                    case 'year_level':
+                                        $matches = stripos($student['year_level'], $search) !== false;
+                                        break;
+                                }
+                                if ($matches) {
+                                    $found_page = ceil(($index + 1) / $rows_per_page);
+                                    break;
+                                }
+                            }
+                            $current_page = $found_page;
+                        } else {
+                            $current_page = isset($_GET['page']) ? max(1, min($total_pages, intval($_GET['page']))) : 1;
+                        }
+                        
+                        $offset = ($current_page - 1) * $rows_per_page;
+                        
+                        // Get current page students
+                        $students = array_slice($all_students, $offset, $rows_per_page);
+
+                        foreach($students as $student):
+                            // Check if this student matches the search criteria
+                            $isHighlighted = false;
+                            if (!empty($search)) {
+                                switch($search_type) {
+                                    case 'student_number':
+                                        $isHighlighted = stripos($student['student_number'], $search) !== false;
+                                        break;
+                                    case 'name':
+                                        $isHighlighted = stripos($student['firstname'] . ' ' . $student['lastname'], $search) !== false;
+                                        break;
+                                    case 'course':
+                                        $isHighlighted = stripos($student['course'], $search) !== false;
+                                        break;
+                                    case 'year_level':
+                                        $isHighlighted = stripos($student['year_level'], $search) !== false;
+                                        break;
+                                }
+                            }
+                            $rowClass = $isHighlighted ? 'highlight-row' : '';
+                        ?>
+                        <tr class="<?php echo $rowClass; ?>">
+                            <td><?php echo htmlspecialchars($student['student_number']); ?></td>
+                            <td><?php echo htmlspecialchars($student['lastname'] . ', ' . $student['firstname']); ?></td>
+                            <td><?php echo htmlspecialchars($student['course']); ?></td>
+                            <td><?php echo htmlspecialchars($student['year_level']); ?></td>
+                            <td><?php echo htmlspecialchars($student['sessions']); ?></td>
+                            <td>
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="student_id" value="<?php echo $student['student_id']; ?>">
+                                    <button type="submit" name="reset_student_session" class="w3-button w3-green w3-round w3-small"
+                                            onclick="return confirm('Reset sessions for <?php echo htmlspecialchars($student['firstname'] . ' ' . $student['lastname']); ?>?')">
+                                        Reset Session
+                                    </button>
+                                </form>
+                                <button type="button" class="w3-button w3-blue w3-round w3-small" 
+                                        onclick="openSitInModal(<?php echo $student['student_id']; ?>)">Set Sit-in</button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                
+                <!-- Pagination Controls -->
+                <?php if ($total_pages > 1): ?>
+                <div class="w3-center" style="margin-top: 20px;">
+                    <div class="w3-bar">
+                        <?php if ($current_page > 1): ?>
+                            <a href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) . '&search_type=' . urlencode($search_type) : ''; ?>" 
+                               class="w3-button w3-blue">&laquo;</a>
+                        <?php endif; ?>
+                        
+                        <?php
+                        $start_page = max(1, $current_page - 2);
+                        $end_page = min($total_pages, $current_page + 2);
+                        
+                        for ($i = $start_page; $i <= $end_page; $i++):
+                        ?>
+                            <a href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) . '&search_type=' . urlencode($search_type) : ''; ?>" 
+                               class="w3-button <?php echo $i == $current_page ? 'w3-blue' : 'w3-white'; ?>">
+                                <?php echo $i; ?>
+                            </a>
+                        <?php endfor; ?>
+                        
+                        <?php if ($current_page < $total_pages): ?>
+                            <a href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) . '&search_type=' . urlencode($search_type) : ''; ?>" 
+                               class="w3-button w3-blue">&raquo;</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
 
         <div class="charts-container">
     <!-- Program Distribution Chart -->
@@ -380,149 +602,72 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-        <div class="table-controls">
-            <div class="entries-selector">
-                <select>
-                    <option>10</option>
-                    <option>25</option>
-                    <option>50</option>
-                    <option>100</option>
-                </select>
-                <span> entries per page</span>
-            </div>
-            <div>
-                <input type="text" placeholder="Search..." class="search-box">
-            </div>
-        </div>
+       
 
-        <table>
-    <thead>
-        <tr>
-            <th>Reservation ID</th>
-            <th>Student Number</th>
-            <th>Name</th>
-            <th>Laboratory Number</th>
-            <th>Purpose</th>
-            <th>Status</th>
-            <th>Created At</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if (count($pendingReservations) > 0): ?>
-            <?php foreach ($pendingReservations as $reservation): ?>
-                <tr>
-                    <td><?= htmlspecialchars($reservation['reservation_id']) ?></td>
-                    <td><?= htmlspecialchars($reservation['student_number']) ?></td>
-                    <td><?= htmlspecialchars($reservation['firstname'] . ' ' . $reservation['lastname']) ?></td>
-                    <td><?= htmlspecialchars($reservation['laboratory_number']) ?></td>
-                    <td><?= htmlspecialchars($reservation['purpose']) ?></td>
-                    <td><?= htmlspecialchars($reservation['status']) ?></td>
-                    <td><?= htmlspecialchars($reservation['created_at']) ?></td>
-                    <td>
-                        <button type="button" class="w3-button w3-blue" 
-                                onclick="openSitInModal(<?= $reservation['reservation_id'] ?>)">Sit-in</button>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="8" style="text-align: center;">No pending reservations found.</td>
-            </tr>
-        <?php endif; ?>
-    </tbody>
-</table>
+      
     </div>
 
-    <?php if (!empty($search)): ?>
-    <h3>Search Results</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Student Number</th>
-                <th>Name</th>
-                <th>Course</th>
-                <th>Year Level</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (count($students) > 0): ?>
-                <?php foreach ($students as $student): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($student['student_number']) ?></td>
-                        <td><?= htmlspecialchars($student['firstname'] . ' ' . $student['lastname']) ?></td>
-                        <td><?= htmlspecialchars($student['course']) ?></td>
-                        <td><?= htmlspecialchars($student['year_level']) ?></td>
-                        <td>
-                        <button type="button" class="w3-button w3-blue" 
-                        onclick="openSitInModal(<?= $student['student_id'] ?>)">Set Sit-in</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="5" style="text-align: center;">No students found.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
-
-    
     <!-- Search Modal -->
-<div id="searchModal" class="w3-modal" style="display:none;">
-    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
-        <header class="w3-container w3-blue">
-            <span onclick="document.getElementById('searchModal').style.display='none'" 
-                  class="w3-button w3-display-topright">&times;</span>
-            <h2>Search</h2>
-        </header>
-        <form method="GET" action="admin.php" class="w3-container">
-            <div class="w3-section">
-                <label for="search"><b>Search by Student Number, Name, or Last Name</b></label>
-                <input type="text" id="search" name="search" class="w3-input w3-border" 
-                       placeholder="Enter search term..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" required>
-            </div>
-            <footer class="w3-container w3-light-grey">
-                <button type="button" class="w3-button w3-red" onclick="document.getElementById('searchModal').style.display='none'">Cancel</button>
-                <button type="submit" class="w3-button w3-blue">Search</button>
-            </footer>
-        </form>
+    <div id="searchModal" class="w3-modal" style="display:none;">
+        <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+            <header class="w3-container w3-blue">
+                <span onclick="document.getElementById('searchModal').style.display='none'" 
+                      class="w3-button w3-display-topright">&times;</span>
+                <h2>Search Students</h2>
+            </header>
+            <form method="GET" action="admin.php" class="w3-container">
+                <div class="w3-section">
+                    <label for="search"><b>Search by:</b></label>
+                    <select name="search_type" class="w3-select w3-border" style="margin-bottom: 10px;">
+                        <option value="student_number">Student Number</option>
+                        <option value="name">Name</option>
+                        <option value="course">Course</option>
+                        <option value="year_level">Year Level</option>
+                    </select>
+                    <input type="text" id="search" name="search" class="w3-input w3-border" 
+                           placeholder="Enter search term..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" required>
+                </div>
+                <footer class="w3-container w3-light-grey">
+                    <button type="button" class="w3-button w3-red" onclick="document.getElementById('searchModal').style.display='none'">Cancel</button>
+                    <button type="submit" class="w3-button w3-blue">Search</button>
+                </footer>
+            </form>
+        </div>
     </div>
-</div>
-<!-- Sit-in Modal -->
-<div id="sitinModal" class="w3-modal" style="display:none;">
-    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
-        <header class="w3-container w3-blue">
-            <span onclick="document.getElementById('sitinModal').style.display='none'" 
-                  class="w3-button w3-display-topright">&times;</span>
-            <h2>Set Sit-in Details</h2>
-        </header>
-        <form method="POST" action="reservation_handler.php" class="w3-container">
-            <div class="w3-section">
-                <input type="hidden" id="student_id" name="student_id"> <!-- Hidden input for student ID -->
 
-                <label for="lab-number"><b>Laboratory Number</b></label>
-                <select id="lab-number" name="lab_number" class="w3-input w3-border" required>
-                    <option value="" disabled selected>Select Laboratory</option>
-                    <option>Lab 524</option>
-                    <option>Lab 526</option>
-                    <option>Lab 544</option>
-                    <option>Lab 528</option>
-                    <option>Lab 530</option>
-                </select>
+    <!-- Sit-in Modal -->
+    <div id="sitinModal" class="w3-modal" style="display:none;">
+        <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width: 500px;">
+            <header class="w3-container w3-blue">
+                <span onclick="document.getElementById('sitinModal').style.display='none'" 
+                      class="w3-button w3-display-topright">&times;</span>
+                <h2>Set Sit-in Details</h2>
+            </header>
+            <form method="POST" action="reservation_handler.php" class="w3-container">
+                <div class="w3-section">
+                    <input type="hidden" id="student_id" name="student_id"> <!-- Hidden input for student ID -->
 
-                <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
-                <textarea id="purpose" name="purpose" class="w3-input w3-border" rows="5" required></textarea>
-            </div>
-            <footer class="w3-container w3-light-grey">
-                <button type="button" class="w3-button w3-red" onclick="document.getElementById('sitinModal').style.display='none'">Cancel</button>
-                <button type="submit" name="set_sitin" class="w3-button w3-blue">Submit</button>
-            </footer>
-        </form>
+                    <label for="lab-number"><b>Laboratory Number</b></label>
+                    <select id="lab-number" name="lab_number" class="w3-input w3-border" required>
+                        <option value="" disabled selected>Select Laboratory</option>
+                        <option>Lab 524</option>
+                        <option>Lab 526</option>
+                        <option>Lab 544</option>
+                        <option>Lab 528</option>
+                        <option>Lab 530</option>
+                    </select>
+
+                    <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
+                    <textarea id="purpose" name="purpose" class="w3-input w3-border" rows="5" required></textarea>
+                </div>
+                <footer class="w3-container w3-light-grey">
+                    <button type="button" class="w3-button w3-red" onclick="document.getElementById('sitinModal').style.display='none'">Cancel</button>
+                    <button type="submit" name="set_sitin" class="w3-button w3-blue">Submit</button>
+                </footer>
+            </form>
+        </div>
     </div>
-</div>
+
 <script>
     // Pass PHP data to JavaScript
     const programData = <?= json_encode($programData) ?>;

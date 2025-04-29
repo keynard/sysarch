@@ -263,11 +263,12 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
 <div class="navbar">
     <span class="menu-icon" onclick="openNav()">&#9776;</span>
     <span>DASHBOARD</span>
+    <span id="current-datetime" style="font-size: 16px;"></span>
     <div class="nav-links">
-        <a  onclick="document.getElementById('feedbackModal').style.display='block'">Feedback</a>
+        <a onclick="document.getElementById('feedbackModal').style.display='block'">Feedback</a>
         <a>Notification</a>
         <a href="update_profile.php" class="edit-prof">Edit Profile</a>
-        <a  onclick="document.getElementById('reservationModal').style.display='block'">Reservation</a>
+        <a href="reservation.php" class="reservation">Make Reservation</a>
         <a href="login.php" class="logout">Logout</a>
     </div>
 </div>
@@ -282,7 +283,7 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
         <p><strong>Year:</strong> <?= htmlspecialchars($student['year_level']); ?></p>
         <p><strong>Course:</strong> <?= htmlspecialchars($student['course']); ?></p>
         <p><strong>Address:</strong> <?= htmlspecialchars($student['address']); ?></p>
-        <p><strong>Session:</strong> <?= htmlspecialchars($student['sessions']); ?></p>
+        <p><strong>Remaining Sessions:</strong> <?= htmlspecialchars($student['sessions']); ?></p>
         <?php if ($sitIn): ?>
             <p><strong>Purpose of Sit-in:</strong> <?= htmlspecialchars($sitIn['purpose']); ?></p>
             <p><strong>Laboratory Number:</strong> <?= htmlspecialchars($sitIn['laboratory_number']); ?></p>
@@ -415,6 +416,25 @@ function openNav() {
 function closeNav() {
     document.getElementById("sidebar").style.width = "0";
 }
+
+// Add function to update date and time
+function updateDateTime() {
+    const now = new Date();
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    document.getElementById('current-datetime').textContent = now.toLocaleString('en-US', options);
+}
+
+// Update time immediately and then every second
+updateDateTime();
+setInterval(updateDateTime, 1000);
 </script>
 
 </body>
