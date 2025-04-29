@@ -426,6 +426,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .highlight-row {
+            background-color: #ffff99 !important;
+        }
     </style>
 </head>
 <body>

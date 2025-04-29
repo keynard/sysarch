@@ -40,6 +40,18 @@ try {
     $sitInStmt->execute();
     $sitIn = $sitInStmt->fetch(PDO::FETCH_ASSOC);
 
+    // Fetch pending reservations
+    $pendingReservationsQuery = "SELECT reservation_id, laboratory_number, pc_number, purpose, 
+                                reservation_date, reservation_time, created_at
+                                FROM reservations 
+                                WHERE student_id = :student_id AND status = 'pending'
+                                ORDER BY reservation_date, reservation_time";
+
+    $pendingReservationsStmt = $conn->prepare($pendingReservationsQuery);
+    $pendingReservationsStmt->bindParam(':student_id', $student_id, PDO::PARAM_INT);
+    $pendingReservationsStmt->execute();
+    $pendingReservations = $pendingReservationsStmt->fetchAll(PDO::FETCH_ASSOC);
+
     // Fetch announcements from the database
     $announcementQuery = "SELECT title, content, created_at 
                           FROM announcement 
@@ -256,6 +268,50 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
+    .reservations-box {
+        width: 100%;
+        max-width: none;
+        margin: 20px 0;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .reservations-header {
+        background-color: #1a4c8b;
+        color: white;
+        padding: 12px 15px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .reservations-header h3 {
+        margin: 0;
+    }
+
+    .reservations-content {
+        padding: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .reservation-item {
+        margin-bottom: 15px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+    }
+
+    .reservation-info p {
+        margin: 5px 0;
+    }
+
+    .status-pending {
+        color: #f39c12;
+        font-weight: bold;
+    }
     </style>
 </head>
 <body>
@@ -406,7 +462,32 @@ $profile_picture_url = !empty($student['profile_picture']) ? htmlspecialchars($s
     </div>
 </div>
 
+<div class="reservations-box">
+    <div class="reservations-header">
+        <h3>My Pending Reservations</h3>
+    </div>
+    <div class="reservations-content">
+        <?php if (count($pendingReservations) > 0): ?>
+            <?php foreach ($pendingReservations as $reservation): ?>
+                <div class="reservation-item">
+                    <div class="reservation-info">
+                        <p><strong>Laboratory:</strong> <?php echo htmlspecialchars($reservation['laboratory_number']); ?></p>
+                        <p><strong>PC Number:</strong> <?php echo htmlspecialchars($reservation['pc_number']); ?></p>
+                        <p><strong>Date:</strong> <?php echo htmlspecialchars($reservation['reservation_date']); ?></p>
+                        <p><strong>Time:</strong> <?php echo htmlspecialchars(date('h:i A', strtotime($reservation['reservation_time']))); ?></p>
+                        <p><strong>Purpose:</strong> <?php echo htmlspecialchars($reservation['purpose']); ?></p>
+                        <p><strong>Status:</strong> <span class="status-pending">Pending</span></p>
+                        <p><strong>Requested on:</strong> <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($reservation['created_at']))); ?></p>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>You have no pending reservations.</p>
+        <?php endif; ?>
+    </div>
+</div>
 
+</div>
 
 <script>
 function openNav() {
