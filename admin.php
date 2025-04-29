@@ -78,7 +78,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
     }
 }
 
+// Fetch all students
+$allStudents = [];
+try {
+    $allStudentsQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level, sessions, email FROM students ORDER BY lastname ASC";
+    $allStudentsStmt = $conn->prepare($allStudentsQuery);
+    $allStudentsStmt->execute();
+    $allStudents = $allStudentsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error fetching all students: " . $e->getMessage());
+}
 
+// Highlighted student IDs from the search
+$highlightedStudents = [];
+$nonHighlightedStudents = [];
+if (!empty($_GET['search'])) {
+    $searchTerm = '%' . trim($_GET['search']) . '%';
+    $searchQuery = "SELECT student_id, student_number, firstname, lastname, course, year_level, sessions, email 
+                    FROM students WHERE 
+                    student_number LIKE :search OR 
+                    firstname LIKE :search OR 
+                    lastname LIKE :search";
+    $searchStmt = $conn->prepare($searchQuery);
+    $searchStmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
+    $searchStmt->execute();
+    $highlightedStudents = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Filter out highlighted students from the full list
+    $highlightedIds = array_column($highlightedStudents, 'student_id');
+    $nonHighlightedStudents = array_filter($allStudents, function ($student) use ($highlightedIds) {
+        return !in_array($student['student_id'], $highlightedIds);
+    });
+} else {
+    $nonHighlightedStudents = $allStudents;
+}
 // Fetch laboratory numbers
 $labQuery = "SELECT DISTINCT laboratory_number FROM reservations"; // Replace 'laboratories' with your table name
 $labStmt = $conn->prepare($labQuery);
@@ -187,7 +220,43 @@ $announcementStmt = $conn->prepare($announcementQuery);
 $announcementStmt->execute();
 $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch students who are currently set in
+$currentSitInStudents = [];
+try {
+    $currentSitInQuery = "SELECT student_id FROM SitIn_Log WHERE time_out IS NULL";
+    $currentSitInStmt = $conn->prepare($currentSitInQuery);
+    $currentSitInStmt->execute();
+    $currentSitInStudents = $currentSitInStmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (Exception $e) {
+    error_log("Error fetching currently set-in students: " . $e->getMessage());
+}
 
+// Reset sessions for a specific student
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_student_id'])) {
+    $studentId = $_POST['reset_student_id'];
+    try {
+        $resetQuery = "UPDATE students SET sessions = 30 WHERE student_id = :student_id";
+        $resetStmt = $conn->prepare($resetQuery);
+        $resetStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
+        $resetStmt->execute();
+        echo "<script>alert('Sessions reset to 30 for the selected student.'); window.location.href='admin.php';</script>";
+    } catch (Exception $e) {
+        error_log("Error resetting sessions for student: " . $e->getMessage());
+        echo "<script>alert('Failed to reset sessions for the selected student.'); window.location.href='admin.php';</script>";
+    }
+}
+
+// Reset sessions for all students
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])) {
+    try {
+        $resetAllQuery = "UPDATE students SET sessions = 30";
+        $conn->exec($resetAllQuery);
+        echo "<script>alert('Sessions reset to 30 for all students.'); window.location.href='admin.php';</script>";
+    } catch (Exception $e) {
+        error_log("Error resetting sessions for all students: " . $e->getMessage());
+        echo "<script>alert('Failed to reset sessions for all students.'); window.location.href='admin.php';</script>";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -356,42 +425,6 @@ $announcements = $announcementStmt->fetchAll(PDO::FETCH_ASSOC);
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
-        }
-        .students-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        .w3-table {
-            width: 100%;
-        }
-        .w3-table th {
-            background-color: #f5f5f5;
-        }
-        .action-buttons {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-        }
-        .search-results-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 20px 0;
-        }
-        .search-results-section h3 {
-            margin-top: 0;
-            color: #004d99;
-        }
-        .highlight-row {
-            background-color: #fff3cd !important;
-            transition: background-color 0.3s ease;
         }
     </style>
 </head>
