@@ -89,16 +89,6 @@ ON SCHEDULE EVERY 1 DAY
 DO
 DELETE FROM announcement WHERE created_at < NOW() - INTERVAL 30 DAY;
 
-
--- Add reservation_id to SitIn_Log if not exists
-ALTER TABLE SitIn_Log
-ADD COLUMN IF NOT EXISTS reservation_id INT,
-ADD FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id);
-
--- Add pc_number to SitIn_Log if not exists
-ALTER TABLE SitIn_Log
-ADD COLUMN IF NOT EXISTS pc_number VARCHAR(10) NULL;
-
 -- Create trigger to update sessions on reservation approval
 DELIMITER //
 CREATE TRIGGER update_sessions_on_approval
@@ -128,3 +118,37 @@ BEGIN
 END;
 //
 DELIMITER ;
+
+-- Add reservation_id to SitIn_Log if not exists
+ALTER TABLE SitIn_Log
+ADD COLUMN IF NOT EXISTS reservation_id INT,
+ADD FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id);
+
+-- Add pc_number to SitIn_Log if not exists
+ALTER TABLE SitIn_Log
+ADD COLUMN IF NOT EXISTS pc_number VARCHAR(10) NULL;
+
+-- Indexes for reservations table
+ALTER TABLE reservations ADD INDEX idx_reservation_status (status);
+ALTER TABLE reservations ADD INDEX idx_reservation_lab (laboratory_number);
+ALTER TABLE reservations ADD INDEX idx_reservation_date_time (reservation_date, reservation_time);
+
+-- Indexes for SitIn_Log table
+ALTER TABLE SitIn_Log ADD INDEX idx_sitin_lab (laboratory_number);
+ALTER TABLE SitIn_Log ADD INDEX idx_sitin_time_out (time_out);
+ALTER TABLE SitIn_Log ADD INDEX idx_sitin_pc (pc_number);
+ALTER TABLE SitIn_Log ADD INDEX idx_sitin_student (student_id);
+
+-- Indexes for students table
+ALTER TABLE students ADD INDEX idx_student_sessions (sessions);
+
+-- Add composite index for PC status query
+ALTER TABLE SitIn_Log ADD INDEX idx_sitin_lab_time (laboratory_number, time_out);
+
+DROP TRIGGER IF EXISTS before_sitin_insert;
+
+ALTER TABLE SitIn_Log 
+MODIFY COLUMN pc_number VARCHAR(10) NULL;
+
+ALTER TABLE SitIn_Log 
+ALTER COLUMN pc_number DROP DEFAULT;

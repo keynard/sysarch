@@ -2,6 +2,13 @@
 session_start();
 include 'db.php';
 
+// Add debug logging
+function debug_log($message) {
+    $log_file = 'debug_log.txt';
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
+}
+
 // Ensure admin is logged in
 if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
@@ -13,52 +20,75 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && isset($_P
     $reservation_id = $_POST['reservation_id'];
     $action = $_POST['action'];
     
+    debug_log("Starting $action process for reservation_id: $reservation_id");
+    $start_time = microtime(true);
+    
     try {
         $conn->beginTransaction();
         
         if ($action === 'approve') {
             // Get reservation details first
-            $stmt = $conn->prepare("SELECT r.*, s.student_id, s.sessions, s.pc_number 
+            $stmt = $conn->prepare("SELECT r.*, s.student_id, s.sessions 
                                   FROM reservations r 
                                   JOIN students s ON r.student_id = s.student_id 
                                   WHERE r.reservation_id = ?");
             $stmt->execute([$reservation_id]);
             $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
             
+            debug_log("Reservation details fetched in " . (microtime(true) - $start_time) . " seconds");
+            
             if ($reservation && $reservation['sessions'] > 0) {
                 // Update reservation status
                 $stmt = $conn->prepare("UPDATE reservations SET status = 'approved' WHERE reservation_id = ?");
                 $stmt->execute([$reservation_id]);
                 
-                // Deduct one session from student
-                $stmt = $conn->prepare("UPDATE students SET sessions = sessions - 1 WHERE student_id = ?");
-                $stmt->execute([$reservation['student_id']]);
-                
                 // Create sit-in record
-                $stmt = $conn->prepare("INSERT INTO SitIn_Log (student_id, laboratory_number, pc_number, purpose, time_in) 
-                                      VALUES (?, ?, ?, ?, NOW())");
-                $stmt->execute([
-                    $reservation['student_id'],
-                    $reservation['laboratory_number'],
-                    $reservation['pc_number'],
-                    $reservation['purpose']
-                ]);
+                if ($pc_number_exists && $reservation_id_exists) {
+                    $stmt = $conn->prepare("INSERT INTO SitIn_Log (student_id, laboratory_number, pc_number, purpose, time_in, reservation_id) 
+                                          VALUES (?, ?, ?, ?, NOW(), ?)");
+                    $stmt->execute([
+                        $reservation['student_id'],
+                        $reservation['laboratory_number'],
+                        $reservation['pc_number'],
+                        $reservation['purpose'],
+                        $reservation_id
+                    ]);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO SitIn_Log (student_id, laboratory_number, purpose, time_in) 
+                                          VALUES (?, ?, ?, NOW())");
+                    $stmt->execute([
+                        $reservation['student_id'],
+                        $reservation['laboratory_number'],
+                        $reservation['purpose']
+                    ]);
+                }
+                
+                debug_log("Sit-in record created in " . (microtime(true) - $start_time) . " seconds");
                 
                 $conn->commit();
-                echo "<script>alert('Reservation approved successfully!'); window.location.href='admin_reservation.php';</script>";
+                debug_log("Transaction committed in " . (microtime(true) - $start_time) . " seconds");
+                
+                header("Location: admin_reservation.php?approved=1");
+                exit();
             } else {
                 $conn->rollBack();
+                debug_log("Transaction rolled back: Student has no remaining sessions or reservation not found");
                 echo "<script>alert('Error: Student has no remaining sessions or reservation not found.');</script>";
             }
         } else if ($action === 'disapprove') {
             $stmt = $conn->prepare("UPDATE reservations SET status = 'rejected' WHERE reservation_id = ?");
             $stmt->execute([$reservation_id]);
             
+            debug_log("Reservation rejected in " . (microtime(true) - $start_time) . " seconds");
+            
             $conn->commit();
-            echo "<script>alert('Reservation rejected successfully!'); window.location.href='admin_reservation.php';</script>";
+            
+            header("Location: admin_reservation.php?rejected=1");
+            exit();
         }
     } catch (Exception $e) {
         $conn->rollBack();
+        debug_log("Error: " . $e->getMessage());
         echo "<script>alert('Error: " . $e->getMessage() . "');</script>";
     }
     exit();
@@ -68,6 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && isset($_P
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] === 'timeout' && isset($_POST['pc_number'])) {
     $pc_number = $_POST['pc_number'];
     $lab_number = $_POST['lab_number'];
+    
+    debug_log("Starting timeout process for PC: $pc_number, Lab: $lab_number");
+    $start_time = microtime(true);
     
     try {
         $conn->beginTransaction();
@@ -79,19 +112,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $stmt->execute([$lab_number]);
         $sitin = $stmt->fetch(PDO::FETCH_ASSOC);
         
+        debug_log("Active sit-in record found in " . (microtime(true) - $start_time) . " seconds");
+        
         if ($sitin) {
             // Update the time_out field
             $stmt = $conn->prepare("UPDATE SitIn_Log SET time_out = NOW() WHERE sitin_id = ?");
             $stmt->execute([$sitin['sitin_id']]);
             
+            debug_log("Time out updated in " . (microtime(true) - $start_time) . " seconds");
+            
             $conn->commit();
             echo "<script>alert('PC marked as available.'); window.location.href='admin_reservation.php?lab=" . substr($lab_number, 4) . "';</script>";
         } else {
             $conn->rollBack();
+            debug_log("No active session found for this laboratory");
             echo "<script>alert('Error: No active session found for this laboratory.');</script>";
         }
     } catch (Exception $e) {
         $conn->rollBack();
+        debug_log("Error: " . $e->getMessage());
         echo "<script>alert('Error: " . $e->getMessage() . "');</script>";
     }
     exit();
@@ -101,6 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 $selected_lab = isset($_GET['lab']) ? 'Lab ' . $_GET['lab'] : 'Lab 524'; // Default to lab 524
 
 // Fetch pending reservations with lab filter
+$start_time = microtime(true);
 $pending_query = "SELECT r.*, s.student_number, s.firstname, s.lastname, s.sessions 
                  FROM reservations r 
                  JOIN students s ON r.student_id = s.student_id 
@@ -108,39 +148,100 @@ $pending_query = "SELECT r.*, s.student_number, s.firstname, s.lastname, s.sessi
 if (!empty($selected_lab)) {
     $pending_query .= " AND r.laboratory_number = :lab";
 }
-$pending_query .= " ORDER BY r.reservation_date, r.reservation_time";
+$pending_query .= " ORDER BY r.reservation_date, r.reservation_time LIMIT 50"; // Add limit to prevent excessive data retrieval
 $pending_stmt = $conn->prepare($pending_query);
 if (!empty($selected_lab)) {
     $pending_stmt->bindParam(':lab', $selected_lab);
 }
 $pending_stmt->execute();
 $pending_reservations = $pending_stmt->fetchAll(PDO::FETCH_ASSOC);
+debug_log("Pending reservations fetched in " . (microtime(true) - $start_time) . " seconds");
 
-// Fetch PC usage status with student information
-$pc_status_query = "SELECT 
-    sl.laboratory_number,
-    r.pc_number,
-    CASE 
-        WHEN sl.time_out IS NULL THEN 1
-        ELSE 0
-    END as is_used,
-    CONCAT(st.firstname, ' ', st.lastname) as student_name,
-    st.student_number,
-    sl.purpose,
-    sl.time_in
-    FROM SitIn_Log sl
-    INNER JOIN students st ON sl.student_id = st.student_id
-    INNER JOIN reservations r ON sl.student_id = r.student_id 
-        AND sl.laboratory_number = r.laboratory_number 
-        AND r.status = 'approved'
-        AND DATE(sl.time_in) = r.reservation_date
-    WHERE sl.time_out IS NULL
-    AND sl.laboratory_number = :lab";
+// Check if pc_number and reservation_id columns exist in SitIn_Log table
+$start_time = microtime(true);
+$check_columns_query = "SHOW COLUMNS FROM SitIn_Log LIKE 'pc_number'";
+$check_columns_stmt = $conn->prepare($check_columns_query);
+$check_columns_stmt->execute();
+$pc_number_exists = $check_columns_stmt->rowCount() > 0;
+
+$check_columns_query = "SHOW COLUMNS FROM SitIn_Log LIKE 'reservation_id'";
+$check_columns_stmt = $conn->prepare($check_columns_query);
+$check_columns_stmt->execute();
+$reservation_id_exists = $check_columns_stmt->rowCount() > 0;
+
+debug_log("Column check completed in " . (microtime(true) - $start_time) . " seconds");
+debug_log("pc_number exists: " . ($pc_number_exists ? "Yes" : "No"));
+debug_log("reservation_id exists: " . ($reservation_id_exists ? "Yes" : "No"));
+
+// Fetch PC usage status with student information - OPTIMIZED QUERY
+$start_time = microtime(true);
+
+if ($pc_number_exists && $reservation_id_exists) {
+    // If both columns exist, use the optimized query
+    $pc_status_query = "SELECT 
+        sl.laboratory_number,
+        sl.pc_number,
+        CASE 
+            WHEN sl.time_out IS NULL THEN 1
+            ELSE 0
+        END as is_used,
+        CONCAT(st.firstname, ' ', st.lastname) as student_name,
+        st.student_number,
+        sl.purpose,
+        sl.time_in
+        FROM SitIn_Log sl
+        INNER JOIN students st ON sl.student_id = st.student_id
+        WHERE sl.time_out IS NULL
+        AND sl.laboratory_number = :lab
+        LIMIT 100"; // Add limit to prevent excessive data retrieval
+} else if ($reservation_id_exists) {
+    // If only reservation_id exists, join with reservations table
+    $pc_status_query = "SELECT 
+        sl.laboratory_number,
+        r.pc_number,
+        CASE 
+            WHEN sl.time_out IS NULL THEN 1
+            ELSE 0
+        END as is_used,
+        CONCAT(st.firstname, ' ', st.lastname) as student_name,
+        st.student_number,
+        sl.purpose,
+        sl.time_in
+        FROM SitIn_Log sl
+        INNER JOIN students st ON sl.student_id = st.student_id
+        INNER JOIN reservations r ON sl.reservation_id = r.reservation_id
+        WHERE sl.time_out IS NULL
+        AND sl.laboratory_number = :lab
+        LIMIT 100"; // Add limit to prevent excessive data retrieval
+} else {
+    // If neither column exists, use the original query
+    $pc_status_query = "SELECT 
+        sl.laboratory_number,
+        r.pc_number,
+        CASE 
+            WHEN sl.time_out IS NULL THEN 1
+            ELSE 0
+        END as is_used,
+        CONCAT(st.firstname, ' ', st.lastname) as student_name,
+        st.student_number,
+        sl.purpose,
+        sl.time_in
+        FROM SitIn_Log sl
+        INNER JOIN students st ON sl.student_id = st.student_id
+        INNER JOIN reservations r ON sl.student_id = r.student_id 
+            AND sl.laboratory_number = r.laboratory_number 
+            AND r.status = 'approved'
+            AND DATE(sl.time_in) = r.reservation_date
+        WHERE sl.time_out IS NULL
+        AND sl.laboratory_number = :lab
+        LIMIT 100"; // Add limit to prevent excessive data retrieval
+}
 
 $pc_status_stmt = $conn->prepare($pc_status_query);
 $pc_status_stmt->bindParam(':lab', $selected_lab);
 $pc_status_stmt->execute();
 $pc_status = $pc_status_stmt->fetchAll(PDO::FETCH_ASSOC);
+debug_log("PC status fetched in " . (microtime(true) - $start_time) . " seconds");
 
 // Create a map of used PCs for easier lookup
 $used_pcs = [];
@@ -167,6 +268,22 @@ $total_labs = 5; // Total number of labs
 $used_labs_count = count($used_pcs);
 $available_labs_count = $total_labs - $used_labs_count;
 $usage_percentage = ($used_labs_count / $total_labs) * 100;
+
+// Check for success messages
+$success_message = '';
+if (isset($_GET['approved']) && $_GET['approved'] == 1) {
+    $success_message = '<div class="w3-panel w3-green w3-display-container">
+        <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-green w3-large w3-display-topright">&times;</span>
+        <h3>Success!</h3>
+        <p>Reservation approved successfully.</p>
+    </div>';
+} else if (isset($_GET['rejected']) && $_GET['rejected'] == 1) {
+    $success_message = '<div class="w3-panel w3-red w3-display-container">
+        <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-red w3-large w3-display-topright">&times;</span>
+        <h3>Success!</h3>
+        <p>Reservation rejected successfully.</p>
+    </div>';
+}
 ?>
 
 <!DOCTYPE html>
@@ -176,11 +293,32 @@ $usage_percentage = ($used_labs_count / $total_labs) * 100;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Reservation Management</title>
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script>
         // Auto-refresh the page every 60 seconds
         setTimeout(function() {
             window.location.reload();
         }, 60000);
+        
+        function submitForm(action, formId) {
+            const form = document.getElementById(formId);
+            const button = event.target;
+            
+            // Disable the button and show loading state
+            button.disabled = true;
+            const originalText = button.textContent;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Create and append hidden input for action
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            form.appendChild(actionInput);
+            
+            // Submit the form
+            form.submit();
+        }
     </script>
     <style>
         body {
@@ -253,6 +391,33 @@ $usage_percentage = ($used_labs_count / $total_labs) * 100;
         .pc-item.used {
             background-color: #ffebee;
             border-color: #ef5350;
+            position: relative;
+            border-width: 2px;
+            box-shadow: 0 0 5px rgba(239, 83, 80, 0.5);
+        }
+        .used-label {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ef5350;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 6px;
+            border-radius: 3px;
+            z-index: 10;
+        }
+        .student-name {
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #d32f2f;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 3px;
+            border-radius: 3px;
         }
         .pc-item.available {
             background-color: #e8f5e9;
@@ -369,6 +534,8 @@ $usage_percentage = ($used_labs_count / $total_labs) * 100;
         </div>
     </div>
 
+    <?php echo $success_message; ?>
+
     <div class="container">
         <!-- Computer Control Section -->
         <div class="computer-control">
@@ -407,14 +574,19 @@ $usage_percentage = ($used_labs_count / $total_labs) * 100;
                     $pc_info = $is_pc_used ? $used_pcs[$pc_number] : null;
                 ?>
                     <div class="pc-item <?php echo $is_pc_used ? 'used' : 'available'; ?>">
+                        <?php if ($is_pc_used): ?>
+                            <div class="used-label">USED</div>
+                        <?php endif; ?>
                         <div class="pc-number"><?php echo $pc_number; ?></div>
                         <div class="status-indicator">
                             <span class="status-dot <?php echo $is_pc_used ? 'used' : 'available'; ?>"></span>
                             <span class="status-text"><?php echo $is_pc_used ? 'In Use' : 'Available'; ?></span>
                         </div>
                         <?php if ($is_pc_used && $pc_info): ?>
+                            <div class="student-name">
+                                <strong>Student:</strong> <?php echo htmlspecialchars($pc_info['student_name']); ?>
+                            </div>
                             <div class="student-info">
-                                <p><strong>Student:</strong> <?php echo htmlspecialchars($pc_info['student_name']); ?></p>
                                 <p><strong>ID:</strong> <?php echo htmlspecialchars($pc_info['student_number']); ?></p>
                                 <p><strong>Purpose:</strong> <?php echo htmlspecialchars($pc_info['purpose']); ?></p>
                                 <p><strong>Time In:</strong> <?php echo htmlspecialchars(date('h:i A', strtotime($pc_info['time_in']))); ?></p>
@@ -448,10 +620,10 @@ $usage_percentage = ($used_labs_count / $total_labs) * 100;
                         <p><strong>Remaining Sessions:</strong> <?php echo htmlspecialchars($reservation['sessions']); ?></p>
                         
                         <div class="action-buttons">
-                            <form method="POST" style="display: inline;">
+                            <form method="POST" style="display: inline;" id="approve-form-<?php echo $reservation['reservation_id']; ?>">
                                 <input type="hidden" name="reservation_id" value="<?php echo $reservation['reservation_id']; ?>">
-                                <button type="submit" name="action" value="approve" class="w3-button w3-green w3-round">Approve</button>
-                                <button type="submit" name="action" value="disapprove" class="w3-button w3-red w3-round">Disapprove</button>
+                                <button type="button" onclick="submitForm('approve', 'approve-form-<?php echo $reservation['reservation_id']; ?>')" class="w3-button w3-green w3-round">Approve</button>
+                                <button type="button" onclick="submitForm('disapprove', 'approve-form-<?php echo $reservation['reservation_id']; ?>')" class="w3-button w3-red w3-round">Disapprove</button>
                             </form>
                         </div>
                     </div>

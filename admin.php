@@ -679,7 +679,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])
                       class="w3-button w3-display-topright">&times;</span>
                 <h2>Set Sit-in Details</h2>
             </header>
-            <form method="POST" action="reservation_handler.php" class="w3-container">
+            <form method="POST" action="reservation_handler.php" class="w3-container" onsubmit="return validateSitInForm()">
                 <div class="w3-section">
                     <input type="hidden" id="student_id" name="student_id"> <!-- Hidden input for student ID -->
 
@@ -691,6 +691,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])
                         <option>Lab 544</option>
                         <option>Lab 528</option>
                         <option>Lab 530</option>
+                    </select>
+
+                    <label for="pc-number" style="margin-top: 10px;"><b>PC Number</b></label>
+                    <select id="pc-number" name="pc_number" class="w3-input w3-border" required>
+                        <option value="" disabled selected>Select PC Number</option>
+                        <?php for($i = 1; $i <= 80; $i++): ?>
+                            <option value="PC <?php echo $i; ?>">PC <?php echo $i; ?></option>
+                        <?php endfor; ?>
                     </select>
 
                     <label for="purpose" style="margin-top: 10px;"><b>Purpose</b></label>
@@ -771,7 +779,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_all_sessions'])
     document.getElementById('sitinModal').style.display = 'block'; // Show the modal
 }
 
-   
+    function validateSitInForm() {
+        const pcNumber = document.getElementById('pc-number').value;
+        const labNumber = document.getElementById('lab-number').value;
+        const studentId = document.getElementById('student_id').value;
+        
+        console.log('Form submission data:', {
+            pcNumber,
+            labNumber,
+            studentId
+        });
+        
+        if (!pcNumber || pcNumber === '') {
+            alert('Please select a PC number');
+            return false;
+        }
+        
+        return true;
+    }
 </script>
 </body>
 </html>
