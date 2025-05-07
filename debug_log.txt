@@ -1,0 +1,96 @@
+[2025-05-07 16:22:41] Pending reservations fetched in 0.0019500255584717 seconds
+[2025-05-07 16:22:41] Column check completed in 0.080704927444458 seconds
+[2025-05-07 16:22:41] pc_number exists: Yes
+[2025-05-07 16:22:41] reservation_id exists: Yes
+[2025-05-07 16:22:41] PC status fetched in 0.0015139579772949 seconds
+[2025-05-07 16:22:44] Pending reservations fetched in 0.0013289451599121 seconds
+[2025-05-07 16:22:44] Column check completed in 0.064761161804199 seconds
+[2025-05-07 16:22:44] pc_number exists: Yes
+[2025-05-07 16:22:44] reservation_id exists: Yes
+[2025-05-07 16:22:44] PC status fetched in 0.001244068145752 seconds
+[2025-05-07 16:22:46] Starting approve process for reservation_id: 38
+[2025-05-07 16:22:46] Reservation details fetched in 0.0016069412231445 seconds
+[2025-05-07 16:22:46] Sit-in record created in 0.0089690685272217 seconds
+[2025-05-07 16:22:46] Transaction committed in 0.011321067810059 seconds
+[2025-05-07 16:22:46] Pending reservations fetched in 0.00087094306945801 seconds
+[2025-05-07 16:22:46] Column check completed in 0.037357807159424 seconds
+[2025-05-07 16:22:46] pc_number exists: Yes
+[2025-05-07 16:22:46] reservation_id exists: Yes
+[2025-05-07 16:22:46] PC status fetched in 0.0018410682678223 seconds
+[2025-05-07 16:24:11] Pending reservations fetched in 0.0021350383758545 seconds
+[2025-05-07 16:24:11] Column check completed in 0.051517963409424 seconds
+[2025-05-07 16:24:11] pc_number exists: Yes
+[2025-05-07 16:24:11] reservation_id exists: Yes
+[2025-05-07 16:24:11] PC status fetched in 0.0011770725250244 seconds
+[2025-05-07 16:24:13] Starting approve process for reservation_id: 39
+[2025-05-07 16:24:13] Reservation details fetched in 0.001378059387207 seconds
+[2025-05-07 16:24:13] Sit-in record created in 0.015475988388062 seconds
+[2025-05-07 16:24:13] Transaction committed in 0.018507957458496 seconds
+[2025-05-07 16:24:13] Pending reservations fetched in 0.0011329650878906 seconds
+[2025-05-07 16:24:13] Column check completed in 0.04022216796875 seconds
+[2025-05-07 16:24:13] pc_number exists: Yes
+[2025-05-07 16:24:13] reservation_id exists: Yes
+[2025-05-07 16:24:13] PC status fetched in 0.0016860961914062 seconds
+[2025-05-07 16:24:14] Pending reservations fetched in 0.0009310245513916 seconds
+[2025-05-07 16:24:15] Column check completed in 0.063647985458374 seconds
+[2025-05-07 16:24:15] pc_number exists: Yes
+[2025-05-07 16:24:15] reservation_id exists: Yes
+[2025-05-07 16:24:15] PC status fetched in 0.0010900497436523 seconds
+[2025-05-07 16:25:44] Pending reservations fetched in 0.0015790462493896 seconds
+[2025-05-07 16:25:44] Column check completed in 0.063559055328369 seconds
+[2025-05-07 16:25:44] pc_number exists: Yes
+[2025-05-07 16:25:44] reservation_id exists: Yes
+[2025-05-07 16:25:44] PC status fetched in 0.001356840133667 seconds
+[2025-05-07 16:25:46] Starting approve process for reservation_id: 40
+[2025-05-07 16:25:46] Reservation details fetched in 0.0016419887542725 seconds
+[2025-05-07 16:25:46] Sit-in record created in 0.010977983474731 seconds
+[2025-05-07 16:25:46] Transaction committed in 0.013289213180542 seconds
+[2025-05-07 16:25:46] Pending reservations fetched in 0.001060962677002 seconds
+[2025-05-07 16:25:46] Column check completed in 0.048954010009766 seconds
+[2025-05-07 16:25:46] pc_number exists: Yes
+[2025-05-07 16:25:46] reservation_id exists: Yes
+[2025-05-07 16:25:46] PC status fetched in 0.0014510154724121 seconds
+[2025-05-07 16:34:43] Pending reservations fetched in 0.00075697898864746 seconds
+[2025-05-07 16:34:43] Column check completed in 0.062669038772583 seconds
+[2025-05-07 16:34:43] pc_number exists: Yes
+[2025-05-07 16:34:43] reservation_id exists: Yes
+[2025-05-07 16:34:43] PC status fetched in 0.0011141300201416 seconds
+[2025-05-07 16:34:45] Pending reservations fetched in 0.0010249614715576 seconds
+[2025-05-07 16:34:46] Column check completed in 0.049315929412842 seconds
+[2025-05-07 16:34:46] pc_number exists: Yes
+[2025-05-07 16:34:46] reservation_id exists: Yes
+[2025-05-07 16:34:46] PC status fetched in 0.0010271072387695 seconds
+[2025-05-07 16:34:47] Pending reservations fetched in 0.00077104568481445 seconds
+[2025-05-07 16:34:47] Column check completed in 0.064195871353149 seconds
+[2025-05-07 16:34:47] pc_number exists: Yes
+[2025-05-07 16:34:47] reservation_id exists: Yes
+[2025-05-07 16:34:47] PC status fetched in 0.0012791156768799 seconds
+[2025-05-07 16:34:48] Pending reservations fetched in 0.00086498260498047 seconds
+[2025-05-07 16:34:48] Column check completed in 0.053915977478027 seconds
+[2025-05-07 16:34:48] pc_number exists: Yes
+[2025-05-07 16:34:48] reservation_id exists: Yes
+[2025-05-07 16:34:48] PC status fetched in 0.0011711120605469 seconds
+[2025-05-07 16:34:50] Pending reservations fetched in 0.00087785720825195 seconds
+[2025-05-07 16:34:50] Column check completed in 0.035109043121338 seconds
+[2025-05-07 16:34:50] pc_number exists: Yes
+[2025-05-07 16:34:50] reservation_id exists: Yes
+[2025-05-07 16:34:50] PC status fetched in 0.0013041496276855 seconds
+[2025-05-07 16:35:01] Pending reservations fetched in 0.0012080669403076 seconds
+[2025-05-07 16:35:02] Column check completed in 0.062669992446899 seconds
+[2025-05-07 16:35:02] pc_number exists: Yes
+[2025-05-07 16:35:02] reservation_id exists: Yes
+[2025-05-07 16:35:02] PC status fetched in 0.0016980171203613 seconds
+[2025-05-07 16:42:30] Pending reservations fetched in 0.0016751289367676 seconds
+[2025-05-07 16:42:30] Column check completed in 0.04305100440979 seconds
+[2025-05-07 16:42:30] pc_number exists: Yes
+[2025-05-07 16:42:30] reservation_id exists: Yes
+[2025-05-07 16:42:30] PC status fetched in 0.0036168098449707 seconds
+[2025-05-07 16:42:32] Starting approve process for reservation_id: 41
+[2025-05-07 16:42:32] Reservation details fetched in 0.001378059387207 seconds
+[2025-05-07 16:42:32] Sit-in record created in 0.0094470977783203 seconds
+[2025-05-07 16:42:32] Transaction committed in 0.011649131774902 seconds
+[2025-05-07 16:42:32] Pending reservations fetched in 0.00094485282897949 seconds
+[2025-05-07 16:42:32] Column check completed in 0.039628028869629 seconds
+[2025-05-07 16:42:32] pc_number exists: Yes
+[2025-05-07 16:42:32] reservation_id exists: Yes
+[2025-05-07 16:42:32] PC status fetched in 0.0013139247894287 seconds

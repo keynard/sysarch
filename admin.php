@@ -55,13 +55,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['set_sitin'])) {
     if ($student) {
         $studentId = $student['student_id'];
 
-        // Insert the sit-in record
-        $insertSitInQuery = "INSERT INTO SitIn_Log (student_id, laboratory_number, purpose, time_in) 
-                             VALUES (:student_id, :lab_number, :purpose, NOW())";
+        // Fetch pc_number from the reservation
+        $fetchReservationQuery = "SELECT pc_number FROM reservations WHERE reservation_id = :reservation_id";
+        $fetchReservationStmt = $conn->prepare($fetchReservationQuery);
+        $fetchReservationStmt->bindParam(':reservation_id', $reservationId, PDO::PARAM_INT);
+        $fetchReservationStmt->execute();
+        $reservation = $fetchReservationStmt->fetch(PDO::FETCH_ASSOC);
+        $pcNumber = $reservation ? $reservation['pc_number'] : null;
+
+        // Insert the sit-in record with pc_number and reservation_id
+        $insertSitInQuery = "INSERT INTO SitIn_Log (student_id, laboratory_number, pc_number, purpose, time_in, reservation_id) 
+                             VALUES (:student_id, :lab_number, :pc_number, :purpose, NOW(), :reservation_id)";
         $insertSitInStmt = $conn->prepare($insertSitInQuery);
         $insertSitInStmt->bindParam(':student_id', $studentId, PDO::PARAM_INT);
         $insertSitInStmt->bindParam(':lab_number', $labNumber, PDO::PARAM_STR);
+        $insertSitInStmt->bindParam(':pc_number', $pcNumber, PDO::PARAM_STR);
         $insertSitInStmt->bindParam(':purpose', $purpose, PDO::PARAM_STR);
+        $insertSitInStmt->bindParam(':reservation_id', $reservationId, PDO::PARAM_INT);
         $insertSitInStmt->execute();
 
         // Update the reservation status to "completed"

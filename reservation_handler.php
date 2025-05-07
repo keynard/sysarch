@@ -255,7 +255,7 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
                 <td><?= htmlspecialchars($log['firstname'] . ' ' . $log['lastname']) ?></td>
                 <td><?= htmlspecialchars($log['sessions']) ?></td>
                 <td><?= htmlspecialchars($log['laboratory_number']) ?></td>
-                <td><?= htmlspecialchars($log['pc_number']) ?></td>
+                <td><?= htmlspecialchars($log['pc_number'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($log['purpose']) ?></td>
                 <td><?= htmlspecialchars($log['time_in']) ?></td>
                 <td>
@@ -268,10 +268,10 @@ $sitInLogs = $sitInStmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endforeach; ?>
     <?php else: ?>
         <tr>
-            <td colspan="8" style="text-align: center;">No active sit-in records found.</td>
+            <td colspan="9" style="text-align: center;">No active sit-in records found.</td>
         </tr>
     <?php endif; ?>
-</tbody>
+            </tbody>
         </table>
     </div>
 </body>
